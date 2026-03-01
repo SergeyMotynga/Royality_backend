@@ -31,7 +31,7 @@ ignore = ["D203", "D213", "COM812", "ISC001"]
 fixable = ["ALL"]
 
 [lint.per-file-ignores]
-"backend/tests/**/*.py" = ["S101", "ANN", "D", "PLR2004"]
+"tests/**/*.py" = ["S101", "ANN", "D", "PLR2004"]
 "backend/alembic/versions/*.py" = ["ANN", "D", "E501"]
 
 [lint.pydocstyle]
