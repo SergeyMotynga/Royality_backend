@@ -1,0 +1,175 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: royality-backend
+    env_file:
+      - ../.env
+    ports:
+      - "8000:8000"
+    command:
+      - python
+      - -c
+      - |
+        import time
+        print("[TODO-INFRA-STUB] replace with uvicorn backend.app.main:app")
+        time.sleep(10**9)
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - minio
+      - minio_init
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17.2-alpine
+    container_name: royality-postgres
+    environment:
+      POSTGRES_USER: royality
+      POSTGRES_PASSWORD: royality
+      POSTGRES_DB: royality
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U royality -d royality"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.2-alpine
+    container_name: royality-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13.7-management-alpine
+    container_name: royality-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2026-01-18T00-31-37Z
+    container_name: royality-minio
+    env_file:
+      - ../.env
+    command:
+      - /bin/sh
+      - -c
+      - |
+        export MINIO_ROOT_USER="$$S3_ACCESS_KEY"
+        export MINIO_ROOT_PASSWORD="$$S3_SECRET_KEY"
+        minio server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  minio_init:
+    image: minio/mc:RELEASE.2026-01-17T23-25-50Z
+    container_name: royality-minio-init
+    env_file:
+      - ../.env
+    depends_on:
+      - minio
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY"; do
+          echo "waiting for minio..."
+          sleep 2
+        done
+        mc mb --ignore-existing local/$$S3_BUCKET_MEDIA
+        mc mb --ignore-existing local/$$S3_BUCKET_AVATARS
+        mc anonymous set none local/$$S3_BUCKET_MEDIA
+        mc anonymous set none local/$$S3_BUCKET_AVATARS
+        echo "minio buckets initialized"
+    restart: "no"
+
+  celery_worker:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: royality-celery-worker
+    env_file:
+      - ../.env
+    command:
+      - python
+      - -c
+      - |
+        import time
+        print("[TODO-INFRA-STUB] replace with celery worker command")
+        time.sleep(10**9)
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - minio
+      - minio_init
+    restart: unless-stopped
+
+  celery_beat:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: royality-celery-beat
+    env_file:
+      - ../.env
+    command:
+      - python
+      - -c
+      - |
+        import time
+        print("[TODO-INFRA-STUB] replace with celery beat command")
+        time.sleep(10**9)
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    restart: unless-stopped
+
+  outbox_relay:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: royality-outbox-relay
+    env_file:
+      - ../.env
+    command:
+      - python
+      - -c
+      - |
+        import time
+        print("[TODO-INFRA-STUB] replace with outbox relay command")
+        time.sleep(10**9)
+    depends_on:
+      - postgres
+      - rabbitmq
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  minio_data:
