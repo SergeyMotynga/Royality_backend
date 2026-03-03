@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17.2-alpine
+        env:
+          POSTGRES_USER: royality
+          POSTGRES_PASSWORD: royality
+          POSTGRES_DB: royality
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U royality -d royality"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+psycopg://royality:royality@localhost:5432/royality
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: python -m pip install --upgrade pip && python -m pip install poetry==2.3.2
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.in-project true --local
+          poetry config virtualenvs.use-poetry-python true --local
+
+      - name: Install dependencies
+        run: poetry install --with dev
+
+      - name: Prepare .env from template
+        run: cp .env.example .env
+
+      - name: Validate Docker Compose files
+        run: |
+          docker compose -f infra/docker-compose.local.yml config -q
+          docker compose -f infra/docker-compose.prod.yml config -q
+
+      - name: Ruff format check
+        run: poetry run ruff format --check .
+
+      - name: Ruff lint
+        run: poetry run ruff check .
+
+      - name: Run tests
+        run: poetry run pytest
+
+      - name: Alembic migration check
+        run: |
+          if [ -f "backend/alembic.ini" ]; then
+            poetry run alembic -c backend/alembic.ini upgrade head
+          elif [ -f "alembic.ini" ]; then
+            poetry run alembic -c alembic.ini upgrade head
+          else
+            echo "[TODO-INFRA-STUB] Alembic is not initialized yet. Skipping migration check."
+          fi
