@@ -32,6 +32,10 @@ jobs:
           --health-retries 10
 
     env:
+      APP_TITLE: Royality Backend
+      ENV: ci
+      LOG_LEVEL: INFO
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
       DATABASE_URL: postgresql+psycopg://royality:royality@localhost:5432/royality
       PYTHONUNBUFFERED: "1"
 
