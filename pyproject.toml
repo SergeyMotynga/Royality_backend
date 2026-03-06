@@ -26,11 +26,24 @@ pytest-asyncio = "^1.2.0"
 httpx = "^0.28.1"
 ruff = "^0.12.0"
 pre-commit = "^4.5.1"
+pytest-cov = "^7.0.0"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests/unit", "tests/integration"]
 pythonpath = ["."]
-addopts = "-q"
+addopts = "-q --strict-markers"
+markers = [
+    "unit: Fast tests that do not require external infrastructure.",
+    "integration: Tests that validate integration of multiple components.",
+]
+
+[tool.coverage.run]
+source = ["backend.app"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 90
 
 [build-system]
 requires = ["poetry-core>=1.9.0"]

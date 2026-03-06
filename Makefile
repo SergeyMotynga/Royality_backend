@@ -18,7 +18,7 @@ else
 	ENV_INIT_CMD = sh -c '[ -f "$(ENV_FILE)" ] || cp "$(ENV_EXAMPLE_FILE)" "$(ENV_FILE)"'
 endif
 
-.PHONY: info env-init install lint format format-check test todo-stubs \
+.PHONY: info env-init install lint format format-check test test-unit test-integration test-coverage todo-stubs \
 	pre-commit-install pre-commit-run pre-commit-run-push \
 	run worker beat outbox makemigrations migrate \
 	up down logs up-local down-local logs-local up-prod down-prod logs-prod
@@ -48,6 +48,15 @@ format-check:
 test:
 	$(POETRY) run pytest
 
+test-unit:
+	$(POETRY) run pytest -m unit
+
+test-integration:
+	$(POETRY) run pytest -m integration
+
+test-coverage:
+	$(POETRY) run pytest --cov=backend.app --cov-report=term-missing --cov-report=xml
+
 todo-stubs:
 	@$(POETRY) run python -c "from pathlib import Path; marker='TODO-INFRA-STUB'; root=Path('.'); found=False; \
 for path in root.rglob('*'): \
@@ -69,7 +78,7 @@ pre-commit-run-push:
 	$(POETRY) run pre-commit run --all-files --hook-stage pre-push
 
 run:
-	@echo "[TODO] replace with uvicorn command after FastAPI app is created"
+	$(POETRY) run uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
 
 worker:
 	@echo "[TODO] replace with celery worker command after worker bootstrap is created"

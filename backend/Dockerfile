@@ -20,4 +20,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["python", "-c", "print('[TODO-INFRA-STUB] replace CMD with uvicorn backend.app.main:app')"]
+CMD ["python", "-m", "uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

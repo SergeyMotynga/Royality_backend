@@ -32,6 +32,10 @@ jobs:
           --health-retries 10
 
     env:
+      APP_TITLE: Royality Backend
+      ENV: ci
+      LOG_LEVEL: INFO
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
       DATABASE_URL: postgresql+psycopg://royality:royality@localhost:5432/royality
       PYTHONUNBUFFERED: "1"
 
@@ -69,8 +73,8 @@ jobs:
       - name: Ruff lint
         run: poetry run ruff check .
 
-      - name: Run tests
-        run: poetry run pytest
+      - name: Run tests with coverage
+        run: poetry run pytest --cov=backend.app --cov-report=term-missing --cov-report=xml
 
       - name: Alembic migration check
         run: |
