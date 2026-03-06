@@ -1,1 +1,1 @@
-"""Backend package root."""
+"""Корневой пакет backend-сервиса."""
