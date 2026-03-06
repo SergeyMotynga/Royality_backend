@@ -69,8 +69,8 @@ jobs:
       - name: Ruff lint
         run: poetry run ruff check .
 
-      - name: Run tests
-        run: poetry run pytest
+      - name: Run tests with coverage
+        run: poetry run pytest --cov=backend.app --cov-report=term-missing --cov-report=xml
 
       - name: Alembic migration check
         run: |
