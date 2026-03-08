@@ -168,6 +168,10 @@ Royality_backend/
 - `/api/v1/profile`
 - `/api/v1/feed`
 
+Feed-контуры v1:
+- `GET /api/v1/feed/home` — лента по подпискам + собственные посты автора;
+- `GET /api/v1/feed/global` — глобальная лента публичных постов.
+
 ---
 
 ## 6. Инфраструктура
@@ -229,6 +233,7 @@ Royality_backend/
 Таблицы:
 - `users`
 - `profiles`
+- `follows`
 - `posts`
 - `post_media`
 - `comments`
@@ -236,6 +241,35 @@ Royality_backend/
 - `refresh_sessions`
 - `outbox_events`
 - `consumed_events`
+
+Базовые соглашения схемы v1:
+- первичные ключи: `UUID`;
+- soft delete: поле `deleted_at TIMESTAMPTZ NULL` в бизнес-таблицах;
+- дата/время: только `TIMESTAMPTZ` (UTC);
+- `posts.visibility`: enum `public | followers | private`.
+
+Ключевые поля `posts`:
+- `id` (UUID)
+- `author_id` (FK -> `users.id`)
+- `text`
+- `visibility` (`public | followers | private`)
+- `created_at`
+- `updated_at`
+- `deleted_at`
+
+Ключевые поля `follows`:
+- `id` (UUID)
+- `follower_id` (FK -> `users.id`)
+- `followee_id` (FK -> `users.id`)
+- `created_at`
+- `deleted_at`
+- ограничения: `follower_id != followee_id`, unique active pair для подписки
+
+Правила выдачи ленты:
+- `global`: только посты `visibility=public` и `deleted_at IS NULL`;
+- `home`: посты авторов, на которых подписан пользователь, плюс собственные посты;
+- `home` включает `public` и `followers` посты подписок, а также собственные `private`;
+- пагинация: keyset по `(created_at, id)`.
 
 Ключевые поля `post_media`:
 - `id`
@@ -265,11 +299,14 @@ Royality_backend/
 
 Индексы:
 - `users(email)` unique
-- `posts(created_at)`
-- `posts(author_id)`
+- `posts(visibility, created_at, id)` — global feed
+- `posts(author_id, created_at, id)`
 - `post_media(post_id, sort_order)`
 - `comments(post_id, created_at)`
 - `post_likes(post_id, user_id)` unique
+- `follows(follower_id, followee_id)` unique
+- `follows(follower_id, deleted_at)`
+- `follows(followee_id, deleted_at)`
 - `outbox_events(status, created_at)`
 - `consumed_events(event_id)` unique
 
@@ -354,7 +391,8 @@ Royality_backend/
 - `POST /api/v1/feed/media/upload-url`
 - `POST /api/v1/feed/media/confirm`
 - `POST /api/v1/feed/posts`
-- `GET /api/v1/feed/posts`
+- `GET /api/v1/feed/home`
+- `GET /api/v1/feed/global`
 - `GET /api/v1/feed/posts/{post_id}`
 - `PATCH /api/v1/feed/posts/{post_id}`
 - `DELETE /api/v1/feed/posts/{post_id}`
@@ -362,6 +400,8 @@ Royality_backend/
 - `GET /api/v1/feed/posts/{post_id}/comments`
 - `POST /api/v1/feed/posts/{post_id}/like`
 - `DELETE /api/v1/feed/posts/{post_id}/like`
+- `POST /api/v1/profile/{user_id}/follow`
+- `DELETE /api/v1/profile/{user_id}/follow`
 - celery-задачи для post-media обработки.
 
 Результат: социальное ядро baseline + медиаконтент в ленте.
