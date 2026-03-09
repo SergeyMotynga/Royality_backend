@@ -4,6 +4,7 @@ DOCKER_COMPOSE ?= docker compose
 COMPOSE_LOCAL_FILE ?= infra/docker-compose.local.yml
 COMPOSE_PROD_FILE ?= infra/docker-compose.prod.yml
 COMPOSE_FILE ?= $(COMPOSE_LOCAL_FILE)
+MSG ?= auto migration
 
 ENV_FILE ?= .env
 ENV_EXAMPLE_FILE ?= .env.example
@@ -20,7 +21,7 @@ endif
 
 .PHONY: info env-init install lint format format-check test test-unit test-integration test-coverage todo-stubs \
 	pre-commit-install pre-commit-run pre-commit-run-push \
-	run worker beat outbox makemigrations migrate \
+	run worker beat outbox makemigrations migrate migrations-check \
 	up down logs up-local down-local logs-local up-prod down-prod logs-prod
 
 info:
@@ -90,10 +91,13 @@ outbox:
 	@echo "[TODO] replace with outbox relay command after relay bootstrap is created"
 
 makemigrations:
-	@echo "[TODO] replace with alembic revision command after Alembic is initialized"
+	$(POETRY) run alembic -c alembic.ini revision --autogenerate -m "$(MSG)"
 
 migrate:
-	@echo "[TODO] replace with alembic upgrade command after Alembic is initialized"
+	$(POETRY) run alembic -c alembic.ini upgrade head
+
+migrations-check:
+	$(POETRY) run alembic -c alembic.ini upgrade head
 
 up:
 	$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) up -d

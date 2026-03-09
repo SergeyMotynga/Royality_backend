@@ -77,11 +77,4 @@ jobs:
         run: poetry run pytest --cov=backend.app --cov-report=term-missing --cov-report=xml
 
       - name: Alembic migration check
-        run: |
-          if [ -f "backend/alembic.ini" ]; then
-            poetry run alembic -c backend/alembic.ini upgrade head
-          elif [ -f "alembic.ini" ]; then
-            poetry run alembic -c alembic.ini upgrade head
-          else
-            echo "[TODO-INFRA-STUB] Alembic is not initialized yet. Skipping migration check."
-          fi
+        run: make migrations-check
