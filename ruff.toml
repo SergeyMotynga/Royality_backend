@@ -1,7 +1,7 @@
 target-version = "py312"
 line-length = 100
 src = ["backend"]
-exclude = [".idea", ".venv", "venv", "__pycache__", "backend/alembic/versions"]
+exclude = [".idea", ".venv", "venv", "__pycache__", "backend/alembic"]
 
 [lint]
 select = [
@@ -32,7 +32,6 @@ fixable = ["ALL"]
 
 [lint.per-file-ignores]
 "tests/**/*.py" = ["S101", "ANN", "D", "PLR2004"]
-"backend/alembic/versions/*.py" = ["ANN", "D", "E501"]
 "backend/app/api/deps.py" = ["TRY003"]
 
 [lint.pydocstyle]
