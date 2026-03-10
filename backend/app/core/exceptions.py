@@ -42,6 +42,28 @@ class AuthenticationNotConfiguredError(AppError):
     code = "auth_not_configured"
 
 
+class EmailAlreadyRegisteredError(AppError):
+    """Ошибка, когда email уже зарегистрирован в системе."""
+
+    status_code = status.HTTP_409_CONFLICT
+    code = "email_already_registered"
+
+    def __init__(self, message: str = "Пользователь с таким email уже зарегистрирован.") -> None:
+        """Инициализирует ошибку конфликта регистрации email."""
+        super().__init__(message)
+
+
+class RateLimitExceededError(AppError):
+    """Ошибка превышения лимита частоты запросов."""
+
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "rate_limit_exceeded"
+
+    def __init__(self, message: str = "Слишком много запросов. Попробуйте позже.") -> None:
+        """Инициализирует ошибку превышения лимита запросов."""
+        super().__init__(message)
+
+
 async def app_error_handler(_: Request, exc: AppError) -> JSONResponse:
     """Преобразует AppError в единый JSON-ответ API."""
     return JSONResponse(
