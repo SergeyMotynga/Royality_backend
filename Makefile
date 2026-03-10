@@ -5,6 +5,7 @@ COMPOSE_LOCAL_FILE ?= infra/docker-compose.local.yml
 COMPOSE_PROD_FILE ?= infra/docker-compose.prod.yml
 COMPOSE_FILE ?= $(COMPOSE_LOCAL_FILE)
 MSG ?= auto migration
+MIGRATIONS_DATABASE_URL ?= postgresql+psycopg://royality:royality@localhost:5432/royality
 
 ENV_FILE ?= .env
 ENV_EXAMPLE_FILE ?= .env.example
@@ -13,10 +14,12 @@ ifeq ($(OS),Windows_NT)
 	DETECTED_OS := windows
 	PYTHON ?= py -3.12
 	ENV_INIT_CMD = powershell -NoProfile -Command "if (!(Test-Path '$(ENV_FILE)')) { Copy-Item '$(ENV_EXAMPLE_FILE)' '$(ENV_FILE)' }"
+	ALEMBIC_DB_ENV_PREFIX = set "DATABASE_URL=$(MIGRATIONS_DATABASE_URL)" &&
 else
 	DETECTED_OS := linux
 	PYTHON ?= python3
 	ENV_INIT_CMD = sh -c '[ -f "$(ENV_FILE)" ] || cp "$(ENV_EXAMPLE_FILE)" "$(ENV_FILE)"'
+	ALEMBIC_DB_ENV_PREFIX = DATABASE_URL=$(MIGRATIONS_DATABASE_URL)
 endif
 
 .PHONY: info env-init install lint format format-check test test-unit test-integration test-coverage todo-stubs \
@@ -91,13 +94,13 @@ outbox:
 	@echo "[TODO] replace with outbox relay command after relay bootstrap is created"
 
 makemigrations:
-	$(POETRY) run alembic -c alembic.ini revision --autogenerate -m "$(MSG)"
+	$(ALEMBIC_DB_ENV_PREFIX) $(POETRY) run alembic -c alembic.ini revision --autogenerate -m "$(MSG)"
 
 migrate:
-	$(POETRY) run alembic -c alembic.ini upgrade head
+	$(ALEMBIC_DB_ENV_PREFIX) $(POETRY) run alembic -c alembic.ini upgrade head
 
 migrations-check:
-	$(POETRY) run alembic -c alembic.ini upgrade head
+	$(ALEMBIC_DB_ENV_PREFIX) $(POETRY) run alembic -c alembic.ini upgrade head
 
 up:
 	$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) up -d
