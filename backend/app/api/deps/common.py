@@ -17,7 +17,7 @@ class UserContext(Protocol):
 
 async def get_current_user() -> UserContext:
     """Возвращает текущего пользователя после подключения слоя аутентификации."""
-    raise AuthenticationNotConfiguredError("Аутентификация пока не подключена.")
+    raise AuthenticationNotConfiguredError()
 
 
 async def get_current_superuser(
@@ -25,5 +25,5 @@ async def get_current_superuser(
 ) -> UserContext:
     """Проверяет, что текущий пользователь является superuser."""
     if not current_user.is_superuser:
-        raise PermissionDeniedError("Недостаточно прав: требуется superuser.")
+        raise PermissionDeniedError()
     return current_user
