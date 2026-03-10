@@ -4,7 +4,12 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import pytest
-from backend.app.core.exceptions import EmailAlreadyRegisteredError, RateLimitExceededError
+from backend.app.core.config import Settings
+from backend.app.core.exceptions import (
+    EmailAlreadyRegisteredError,
+    RateLimitExceededError,
+    WeakPasswordError,
+)
 from backend.app.core.security import hash_password
 from backend.app.models.user import User
 from backend.app.services.auth import AuthService
@@ -185,6 +190,63 @@ async def test_register_raises_if_rate_limit_exceeded() -> None:
             ip_address="127.0.0.1",
         )
 
+    assert user_repo.requested_email is None
+    assert user_repo.created_email is None
+    assert code_store.calls == []
+    assert email_publisher.calls == []
+
+
+@pytest.mark.asyncio
+async def test_register_raises_if_password_is_weak() -> None:
+    rate_limiter = _FakeRegisterRateLimiter()
+    user_repo = _FakeUserRepo()
+    code_store = _FakeVerificationCodeStore()
+    email_publisher = _FakeEmailTaskPublisher()
+    service = AuthService(
+        rate_limiter=rate_limiter,
+        user_repo=user_repo,
+        verification_code_store=code_store,
+        email_task_publisher=email_publisher,
+    )
+
+    with pytest.raises(WeakPasswordError):
+        await service.register(
+            email="newuser@example.com",
+            password="weakpassword",  # noqa: S106
+            ip_address="127.0.0.1",
+        )
+
+    assert rate_limiter.calls == []
+    assert user_repo.requested_email is None
+    assert user_repo.created_email is None
+    assert code_store.calls == []
+    assert email_publisher.calls == []
+
+
+@pytest.mark.asyncio
+async def test_register_uses_password_limits_from_settings() -> None:
+    rate_limiter = _FakeRegisterRateLimiter()
+    user_repo = _FakeUserRepo()
+    code_store = _FakeVerificationCodeStore()
+    email_publisher = _FakeEmailTaskPublisher()
+    custom_settings = Settings(PASSWORD_MIN_LENGTH=10, PASSWORD_MAX_LENGTH=12)
+    service = AuthService(
+        rate_limiter=rate_limiter,
+        user_repo=user_repo,
+        verification_code_store=code_store,
+        email_task_publisher=email_publisher,
+        settings=custom_settings,
+    )
+
+    with pytest.raises(WeakPasswordError) as error_info:
+        await service.register(
+            email="newuser@example.com",
+            password="a1!aaaaa",  # noqa: S106
+            ip_address="127.0.0.1",
+        )
+
+    assert "короче 10" in error_info.value.message.lower()
+    assert rate_limiter.calls == []
     assert user_repo.requested_email is None
     assert user_repo.created_email is None
     assert code_store.calls == []

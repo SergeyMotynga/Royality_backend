@@ -27,6 +27,44 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     access_token_expire_minutes: int = Field(default=30, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=30, alias="REFRESH_TOKEN_EXPIRE_DAYS")
+    password_min_length: int = Field(default=8, alias="PASSWORD_MIN_LENGTH")
+    password_max_length: int = Field(default=26, alias="PASSWORD_MAX_LENGTH")
+    register_rate_limit_max_requests_per_email: int = Field(
+        default=5,
+        alias="REGISTER_RATE_LIMIT_MAX_REQUESTS_PER_EMAIL",
+    )
+    register_rate_limit_max_requests_per_ip: int = Field(
+        default=30,
+        alias="REGISTER_RATE_LIMIT_MAX_REQUESTS_PER_IP",
+    )
+    register_rate_limit_window_seconds: int = Field(
+        default=900,
+        alias="REGISTER_RATE_LIMIT_WINDOW_SECONDS",
+    )
+    login_rate_limit_max_requests_per_email: int = Field(
+        default=10,
+        alias="LOGIN_RATE_LIMIT_MAX_REQUESTS_PER_EMAIL",
+    )
+    login_rate_limit_max_requests_per_ip: int = Field(
+        default=60,
+        alias="LOGIN_RATE_LIMIT_MAX_REQUESTS_PER_IP",
+    )
+    login_rate_limit_window_seconds: int = Field(
+        default=900,
+        alias="LOGIN_RATE_LIMIT_WINDOW_SECONDS",
+    )
+    verify_rate_limit_max_requests_per_email: int = Field(
+        default=5,
+        alias="VERIFY_RATE_LIMIT_MAX_REQUESTS_PER_EMAIL",
+    )
+    verify_rate_limit_max_requests_per_ip: int = Field(
+        default=30,
+        alias="VERIFY_RATE_LIMIT_MAX_REQUESTS_PER_IP",
+    )
+    verify_rate_limit_window_seconds: int = Field(
+        default=600,
+        alias="VERIFY_RATE_LIMIT_WINDOW_SECONDS",
+    )
     email_verification_code_ttl_seconds: int = Field(
         default=600,
         alias="EMAIL_VERIFICATION_CODE_TTL_SECONDS",

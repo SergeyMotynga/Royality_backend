@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Protocol
 
+from backend.app.adapters.auth.constants import build_email_verification_key
+
 
 class RedisValueClient(Protocol):
     """Минимальный контракт Redis-клиента для записи значений с TTL."""
@@ -30,7 +32,7 @@ class RedisVerificationCodeStore:
         resend_cooldown_seconds: int,
     ) -> None:
         """Сохраняет код верификации и сопутствующие ограничения в Redis."""
-        key = f"auth:verify:{email}"
+        key = build_email_verification_key(email)
         payload = json.dumps(
             {
                 "code": code,

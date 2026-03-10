@@ -6,9 +6,13 @@ import hashlib
 import hmac
 import secrets
 
+from backend.app.core.exceptions import WeakPasswordError
+
 PBKDF2_ALGORITHM = "sha256"
 PBKDF2_ITERATIONS = 200_000
 SALT_BYTES = 16
+DEFAULT_PASSWORD_MIN_LENGTH = 8
+DEFAULT_PASSWORD_MAX_LENGTH = 26
 
 
 def hash_password(password: str) -> str:
@@ -39,3 +43,26 @@ def verify_password(password: str, encoded_hash: str) -> bool:
         iterations,
     )
     return hmac.compare_digest(expected_hash.hex(), hash_hex)
+
+
+def validate_password_policy(
+    password: str,
+    *,
+    min_length: int = DEFAULT_PASSWORD_MIN_LENGTH,
+    max_length: int = DEFAULT_PASSWORD_MAX_LENGTH,
+) -> None:
+    """Проверяет пароль по базовой политике и выбрасывает ошибку при нарушении."""
+    if len(password) < min_length:
+        raise WeakPasswordError.too_short(min_length=min_length)
+
+    if len(password) > max_length:
+        raise WeakPasswordError.too_long(max_length=max_length)
+
+    if any(character.isspace() for character in password):
+        raise WeakPasswordError.contains_whitespace()
+
+    if not any(character.isdigit() for character in password):
+        raise WeakPasswordError.missing_digit()
+
+    if not any((not character.isalnum()) and (not character.isspace()) for character in password):
+        raise WeakPasswordError.missing_special_symbol()

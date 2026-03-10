@@ -6,7 +6,7 @@ import secrets
 
 from backend.app.core.config import Settings, get_settings
 from backend.app.core.exceptions import EmailAlreadyRegisteredError
-from backend.app.core.security import hash_password
+from backend.app.core.security import hash_password, validate_password_policy
 from backend.app.models.user import User
 from backend.app.services.auth.contracts import (
     EmailTaskPublisher,
@@ -38,6 +38,11 @@ class AuthService:
     async def register(self, *, email: str, password: str, ip_address: str | None) -> User:
         """Регистрирует пользователя, создает код верификации и ставит отправку письма в очередь."""
         normalized_email = self._normalize_email(email)
+        validate_password_policy(
+            password,
+            min_length=self.settings.password_min_length,
+            max_length=self.settings.password_max_length,
+        )
 
         await self.rate_limiter.check_register_limits(
             email=normalized_email,
