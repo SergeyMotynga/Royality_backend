@@ -38,13 +38,15 @@ class RedisRegisterRateLimiter:
         """Проверяет лимиты регистрации и выбрасывает ошибку при превышении."""
         email_key = f"auth:register:email:{email}"
         email_attempts = await self.redis_client.incr(email_key)
-        await self.redis_client.expire(email_key, self.window_seconds)
+        if email_attempts == 1:
+            await self.redis_client.expire(email_key, self.window_seconds)
         if email_attempts > self.max_requests_per_email:
             raise RateLimitExceededError()
 
         if ip_address is not None:
             ip_key = f"auth:register:ip:{ip_address}"
             ip_attempts = await self.redis_client.incr(ip_key)
-            await self.redis_client.expire(ip_key, self.window_seconds)
+            if ip_attempts == 1:
+                await self.redis_client.expire(ip_key, self.window_seconds)
             if ip_attempts > self.max_requests_per_ip:
                 raise RateLimitExceededError()
