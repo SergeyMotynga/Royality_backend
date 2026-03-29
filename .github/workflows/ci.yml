@@ -20,23 +20,23 @@ jobs:
       postgres:
         image: postgres:17.2-alpine
         env:
-          POSTGRES_USER: royality
-          POSTGRES_PASSWORD: royality
-          POSTGRES_DB: royality
+          POSTGRES_USER: finguru
+          POSTGRES_PASSWORD: finguru
+          POSTGRES_DB: finguru
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U royality -d royality"
+          --health-cmd "pg_isready -U finguru -d finguru"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
 
     env:
-      APP_TITLE: Royality Backend
+      APP_TITLE: FinGuru Backend
       ENV: ci
       LOG_LEVEL: INFO
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      DATABASE_URL: postgresql+psycopg://royality:royality@localhost:5432/royality
+      DATABASE_URL: postgresql+psycopg://finguru:finguru@localhost:5432/finguru
       PYTHONUNBUFFERED: "1"
 
     steps:

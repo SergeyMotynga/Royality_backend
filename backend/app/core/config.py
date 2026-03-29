@@ -16,12 +16,12 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
     )
 
-    app_title: str = Field(default="Royality Backend", alias="APP_TITLE")
+    app_title: str = Field(default="FinGuru Backend", alias="APP_TITLE")
     env: str = Field(default="dev", alias="ENV")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     secret_key: str = Field(default="change-me", alias="SECRET_KEY")
     database_url: str = Field(
-        default="postgresql+psycopg://royality:royality@localhost:5432/royality",
+        default="postgresql+psycopg://finguru:finguru@localhost:5432/finguru",
         alias="DATABASE_URL",
     )
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     smtp_port: int = Field(default=1025, alias="SMTP_PORT")
     smtp_username: str = Field(default="", alias="SMTP_USERNAME")
     smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
-    smtp_from_email: str = Field(default="noreply@royality.local", alias="SMTP_FROM_EMAIL")
-    smtp_from_name: str = Field(default="Royality", alias="SMTP_FROM_NAME")
+    smtp_from_email: str = Field(default="noreply@finguru.local", alias="SMTP_FROM_EMAIL")
+    smtp_from_name: str = Field(default="FinGuru", alias="SMTP_FROM_NAME")
     smtp_use_tls: bool = Field(default=False, alias="SMTP_USE_TLS")
     smtp_use_ssl: bool = Field(default=False, alias="SMTP_USE_SSL")
     api_prefix: str = "/api"

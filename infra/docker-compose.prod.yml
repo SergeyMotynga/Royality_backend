@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: backend/Dockerfile
-    container_name: royality-backend
+    container_name: finguru-backend
     env_file:
       - ../.env
     ports:
@@ -20,14 +20,15 @@ services:
     depends_on:
       - postgres
       - redis
-      - rabbitmq
-      - minio
-      - minio_init
+      # Опциональные зависимости для async/OCR (включайте профили при необходимости).
+      # - rabbitmq
+      # - minio
+      # - minio_init
     restart: unless-stopped
 
   postgres:
     image: postgres:17.2-alpine
-    container_name: royality-postgres
+    container_name: finguru-postgres
     env_file:
       - ../.env
     volumes:
@@ -41,15 +42,17 @@ services:
 
   redis:
     image: redis:7.4.2-alpine
-    container_name: royality-redis
+    container_name: finguru-redis
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
     restart: unless-stopped
 
+  # Опционально: асинхронный стек (broker для Celery). По умолчанию отключен.
   rabbitmq:
+    profiles: ["async"]
     image: rabbitmq:3.13.7-management-alpine
-    container_name: royality-rabbitmq
+    container_name: finguru-rabbitmq
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -59,9 +62,11 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # Опционально: object storage для загрузки файлов / OCR-артефактов. По умолчанию отключен.
   minio:
+    profiles: ["ocr"]
     image: minio/minio:latest
-    container_name: royality-minio
+    container_name: finguru-minio
     env_file:
       - ../.env
     environment:
@@ -76,9 +81,11 @@ services:
       - minio_data:/data
     restart: unless-stopped
 
+  # Опционально: инициализация бакетов для профиля MinIO. По умолчанию отключена.
   minio_init:
+    profiles: ["ocr"]
     image: minio/mc:latest
-    container_name: royality-minio-init
+    container_name: finguru-minio-init
     env_file:
       - ../.env
     depends_on:
@@ -88,21 +95,23 @@ services:
       - -c
       - |
         until mc alias set local http://minio:9000 "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY"; do
-          echo "waiting for minio..."
+          echo "ожидание MinIO..."
           sleep 2
         done
         mc mb --ignore-existing local/$$S3_BUCKET_MEDIA
         mc mb --ignore-existing local/$$S3_BUCKET_AVATARS
         mc anonymous set none local/$$S3_BUCKET_MEDIA
         mc anonymous set none local/$$S3_BUCKET_AVATARS
-        echo "minio buckets initialized"
+        echo "бакеты MinIO инициализированы"
     restart: "no"
 
+  # Опционально: процесс async-воркера. По умолчанию отключен.
   celery_worker:
+    profiles: ["async"]
     build:
       context: ..
       dockerfile: backend/Dockerfile
-    container_name: royality-celery-worker
+    container_name: finguru-celery-worker
     env_file:
       - ../.env
     command:
@@ -110,21 +119,24 @@ services:
       - -c
       - |
         import time
-        print("[TODO-INFRA-STUB] replace with celery worker command")
+        print("[TODO-INFRA-STUB] замените на команду запуска celery worker")
         time.sleep(10**9)
     depends_on:
       - postgres
       - redis
       - rabbitmq
-      - minio
-      - minio_init
+      # Опционально, если воркер использует OCR/задачи file-storage.
+      # - minio
+      # - minio_init
     restart: unless-stopped
 
+  # Опционально: процесс планировщика. По умолчанию отключен.
   celery_beat:
+    profiles: ["async"]
     build:
       context: ..
       dockerfile: backend/Dockerfile
-    container_name: royality-celery-beat
+    container_name: finguru-celery-beat
     env_file:
       - ../.env
     command:
@@ -132,7 +144,7 @@ services:
       - -c
       - |
         import time
-        print("[TODO-INFRA-STUB] replace with celery beat command")
+        print("[TODO-INFRA-STUB] замените на команду запуска celery beat")
         time.sleep(10**9)
     depends_on:
       - postgres
@@ -140,11 +152,13 @@ services:
       - rabbitmq
     restart: unless-stopped
 
+  # Опционально: процесс outbox relay. По умолчанию отключен.
   outbox_relay:
+    profiles: ["async"]
     build:
       context: ..
       dockerfile: backend/Dockerfile
-    container_name: royality-outbox-relay
+    container_name: finguru-outbox-relay
     env_file:
       - ../.env
     command:
@@ -152,7 +166,7 @@ services:
       - -c
       - |
         import time
-        print("[TODO-INFRA-STUB] replace with outbox relay command")
+        print("[TODO-INFRA-STUB] замените на команду запуска outbox relay")
         time.sleep(10**9)
     depends_on:
       - postgres
