@@ -11,3 +11,4 @@
 ## Плановые документы
 
 - [BACKEND_DEVELOPMENT_PLAN.md](./plans/BACKEND_DEVELOPMENT_PLAN.md)
+- [INFRA_BOOTSTRAP_PLAN.md](./plans/INFRA_BOOTSTRAP_PLAN.md)

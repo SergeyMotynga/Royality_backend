@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "royality-backend"
+version = "0.1.0"
+description = "Backend-сервис проекта Royality"
+authors = ["Команда Royality <team@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "backend" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.116.1"
+uvicorn = { extras = ["standard"], version = "^0.35.0" }
+pydantic-settings = "^2.11.0"
+sqlalchemy = "^2.0.43"
+alembic = "^1.16.5"
+psycopg = { extras = ["binary"], version = "^3.2.10" }
+boto3 = "^1.40.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.2"
+pytest-asyncio = "^1.2.0"
+httpx = "^0.28.1"
+ruff = "^0.12.0"
+pytest-cov = "^7.0.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q --strict-markers"
+markers = [
+    "unit: Быстрые тесты без внешней инфраструктуры.",
+    "integration: Тесты интеграции нескольких компонентов.",
+]
+
+[tool.coverage.run]
+source = ["backend.app"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 90
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
