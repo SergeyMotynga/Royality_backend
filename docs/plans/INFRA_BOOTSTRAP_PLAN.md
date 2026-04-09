@@ -42,8 +42,8 @@ DoD:
 - `backend/app/api/routers.py`.
 - `backend/app/api/v1/routers.py`.
 - `backend/app/api/v1/endpoints/public/health.py`.
-- `backend/app/api/v1/endpoints/admin/health.py`.
-- зависимости доступа (`get_current_user`, `get_current_superuser`).
+- `backend/app/api/v1/endpoints/admin/health.py` как архитектурная заготовка admin-контура.
+- зависимости доступа (`get_current_user`, `get_current_superuser`) как заготовка для будущих admin-фич.
 
 DoD:
 - Поднимается приложение с `uvicorn backend.app.main:app`.
@@ -53,23 +53,23 @@ DoD:
 
 Добавить:
 - `backend/Dockerfile` (Poetry + запуск uvicorn).
-- `infra/docker-compose.local.yml`.
-- (опционально) `infra/docker-compose.prod.yml`.
+- `royality/docker-compose.local.yml`.
 
 Сервисы на старте:
-- `backend`.
 - `postgres` (`postgres:17-alpine`).
 - `minio`.
 - `minio_init` (инициализация бакетов).
 
 DoD:
-- `docker compose -f infra/docker-compose.local.yml up -d` стартует.
-- Контейнеры `backend`, `postgres`, `minio` в состоянии `running`.
+- `docker compose --env-file .env -f royality/docker-compose.local.yml up -d postgres minio minio_init` стартует.
+- Контейнеры `postgres`, `minio` в состоянии `running`.
+- backend может запускаться локально и подключаться к контейнерным `postgres` и `minio`.
 
 ### Шаг 4. Smoke-тесты и фиксация
 
 Добавить минимальные интеграционные тесты health endpoint-ов:
-- `tests/integration/test_api_endpoints.py`.
+- `tests/integration/test_health_endpoints.py`.
+- `tests/mocks/repositories.py` для переиспользуемых моков репозиториев.
 
 Проверки:
 - `pytest -m integration` (или точечно по файлу).

@@ -1,0 +1,102 @@
+name: royality
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command:
+      - server
+      - /data
+      - --console-address
+      - ":9001"
+    ports:
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  minio_init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do
+          echo "Ожидание запуска MinIO..."
+          sleep 2
+        done
+        mc mb --ignore-existing local/$$MINIO_BUCKET_NAME
+        mc anonymous set none local/$$MINIO_BUCKET_NAME
+        echo "Бакет MinIO инициализирован: $$MINIO_BUCKET_NAME"
+    restart: "no"
+
+  backend:
+    profiles: ["backend"]
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    environment:
+      APP_TITLE: ${APP_TITLE}
+      ENV: ${ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+      APP_HOST: ${DOCKER_APP_HOST}
+      APP_PORT: ${DOCKER_APP_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${DOCKER_POSTGRES_HOST}
+      POSTGRES_PORT: ${DOCKER_POSTGRES_PORT}
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ENDPOINT: ${DOCKER_MINIO_ENDPOINT}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
+      MINIO_REGION: ${MINIO_REGION}
+      MINIO_SECURE: ${DOCKER_MINIO_SECURE}
+    ports:
+      - "${DOCKER_APP_PORT}:${DOCKER_APP_PORT}"
+    command:
+      - python
+      - -m
+      - uvicorn
+      - backend.app.main:app
+      - --host
+      - ${DOCKER_APP_HOST}
+      - --port
+      - ${DOCKER_APP_PORT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio_init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  minio_data:
