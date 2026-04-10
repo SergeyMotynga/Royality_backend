@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     app_title: str = Field(alias="ROYALITY_APP_TITLE")
     env: str = Field(alias="ROYALITY_ENV")
     log_level: str = Field(alias="ROYALITY_LOG_LEVEL")
+    secret_key: str = Field(alias="ROYALITY_SECRET_KEY")
 
     app_host: str = Field(alias="ROYALITY_APP_HOST")
     app_port: int = Field(alias="ROYALITY_APP_PORT")

@@ -60,6 +60,7 @@ jobs:
           ROYALITY_APP_TITLE=Royality Backend
           ROYALITY_ENV=ci
           ROYALITY_LOG_LEVEL=INFO
+          ROYALITY_SECRET_KEY=ci-secret-key-32-characters-long-0001
           ROYALITY_APP_HOST=127.0.0.1
           ROYALITY_APP_PORT=8000
           ROYALITY_POSTGRES_USER=royality
