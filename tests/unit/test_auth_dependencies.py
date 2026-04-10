@@ -2,6 +2,7 @@
 
 import pytest
 from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
 
 from backend.app.api.dependencies.auth import CurrentUser, get_current_superuser, get_current_user
 from backend.app.core.config import get_settings
@@ -11,17 +12,18 @@ from backend.app.core.security import create_access_token
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_get_current_user_uses_default_values() -> None:
-    """Проверяет значения пользователя по умолчанию."""
-    user = await get_current_user(authorization=None, x_user_id=None, x_role=None)
+    """Проверяет, что без токена и fallback-заголовка доступ запрещен."""
+    with pytest.raises(HTTPException) as exc_info:
+        await get_current_user(credentials=None, x_user_id=None, x_role=None)
 
-    assert user == CurrentUser(user_id="local-user", is_superuser=False)
+    assert exc_info.value.status_code == 401
 
 
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_get_current_user_for_admin_role() -> None:
     """Проверяет распознавание роли администратора."""
-    user = await get_current_user(authorization=None, x_user_id="user-1", x_role="admin")
+    user = await get_current_user(credentials=None, x_user_id="user-1", x_role="admin")
 
     assert user == CurrentUser(user_id="user-1", is_superuser=True)
 
@@ -37,7 +39,9 @@ async def test_get_current_user_from_bearer_token() -> None:
         is_superuser=True,
     )
 
-    user = await get_current_user(authorization=f"Bearer {token}")
+    user = await get_current_user(
+        credentials=HTTPAuthorizationCredentials(scheme="Bearer", credentials=token),
+    )
 
     assert user == CurrentUser(user_id="token-user", is_superuser=True)
 
@@ -47,7 +51,9 @@ async def test_get_current_user_from_bearer_token() -> None:
 async def test_get_current_user_invalid_authorization_format() -> None:
     """Проверяет ошибку некорректного формата Authorization."""
     with pytest.raises(HTTPException) as exc_info:
-        await get_current_user(authorization="Token abc")
+        await get_current_user(
+            credentials=HTTPAuthorizationCredentials(scheme="Token", credentials="abc"),
+        )
 
     assert exc_info.value.status_code == 401
 
@@ -57,7 +63,9 @@ async def test_get_current_user_invalid_authorization_format() -> None:
 async def test_get_current_user_invalid_token() -> None:
     """Проверяет ошибку некорректного access token."""
     with pytest.raises(HTTPException) as exc_info:
-        await get_current_user(authorization="Bearer invalid-token")
+        await get_current_user(
+            credentials=HTTPAuthorizationCredentials(scheme="Bearer", credentials="invalid-token"),
+        )
 
     assert exc_info.value.status_code == 401
 

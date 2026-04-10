@@ -2,7 +2,8 @@
 
 from dataclasses import dataclass
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Security, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError
 
 from backend.app.core.config import get_settings
@@ -17,15 +18,23 @@ class CurrentUser:
     is_superuser: bool
 
 
+bearer_scheme = HTTPBearer(auto_error=False)
+
+
 async def get_current_user(
-    authorization: str | None = Header(default=None, alias="Authorization"),
+    credentials: HTTPAuthorizationCredentials | None = Security(bearer_scheme),
     x_user_id: str | None = Header(default=None, alias="X-User-Id"),
     x_role: str | None = Header(default=None, alias="X-Role"),
 ) -> CurrentUser:
     """Возвращает текущего пользователя из заголовков запроса."""
-    if authorization:
-        token_type, _, token = authorization.partition(" ")
-        if token_type.lower() != "bearer" or not token:
+    if credentials is not None:
+        if credentials.scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Некорректный формат заголовка Authorization",
+            )
+        token = credentials.credentials
+        if not token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Некорректный формат заголовка Authorization",
@@ -49,9 +58,15 @@ async def get_current_user(
             is_superuser=bool(payload.get("is_superuser", False)),
         )
 
-    return CurrentUser(
-        user_id=x_user_id or "local-user",
-        is_superuser=(x_role or "").lower() == "admin",
+    if x_user_id:
+        return CurrentUser(
+            user_id=x_user_id,
+            is_superuser=(x_role or "").lower() == "admin",
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Требуется авторизация",
     )
 
 

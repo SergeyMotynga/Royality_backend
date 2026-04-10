@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     minio_root_user: str = Field(alias="ROYALITY_MINIO_ROOT_USER")
     minio_root_password: str = Field(alias="ROYALITY_MINIO_ROOT_PASSWORD")
     minio_endpoint: str = Field(alias="ROYALITY_MINIO_ENDPOINT")
+    minio_public_endpoint: str | None = Field(default=None, alias="ROYALITY_MINIO_PUBLIC_ENDPOINT")
     minio_bucket_name: str = Field(alias="ROYALITY_MINIO_BUCKET_NAME")
     minio_region: str = Field(alias="ROYALITY_MINIO_REGION")
     minio_secure: bool = Field(alias="ROYALITY_MINIO_SECURE")

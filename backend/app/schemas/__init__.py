@@ -1,6 +1,7 @@
 """Пакет Pydantic-схем."""
 
 from backend.app.schemas.auth import LoginRequest, LoginResponse, SignupRequest, SignupResponse
+from backend.app.schemas.media import MediaUploadResponse
 from backend.app.schemas.post import (
     PostAuthorResponse,
     PostCreateRequest,
@@ -11,6 +12,7 @@ from backend.app.schemas.post import (
 __all__ = [
     "LoginRequest",
     "LoginResponse",
+    "MediaUploadResponse",
     "PostAuthorResponse",
     "PostCreateRequest",
     "PostResponse",

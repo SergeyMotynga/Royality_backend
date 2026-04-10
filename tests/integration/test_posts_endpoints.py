@@ -8,13 +8,18 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.app.api.dependencies.services import get_auth_service, get_post_service
+from backend.app.api.dependencies.services import (
+    get_auth_service,
+    get_media_service,
+    get_post_service,
+)
 from backend.app.core.config import get_settings
 from backend.app.crud.post_crud import PostCrud
 from backend.app.crud.user_crud import UserCrud
 from backend.app.db.base import Base
 from backend.app.main import app
 from backend.app.services.auth_service import AuthService
+from backend.app.services.media_service import MediaService
 from backend.app.services.post_service import PostService
 
 
@@ -42,8 +47,30 @@ def posts_client() -> TestClient:
             user_crud=UserCrud(session=session),
         )
 
+    class TestMediaService(MediaService):
+        """Фейковая медиа-служба для интеграционных тестов."""
+
+        def __init__(self) -> None:
+            pass
+
+        def upload_post_image(
+            self,
+            user_id: str,
+            file_name: str | None,
+            content_type: str | None,
+            payload: bytes,
+        ) -> str:
+            extension = "jpg"
+            if file_name and "." in file_name:
+                extension = file_name.rsplit(".", maxsplit=1)[1]
+            return f"https://media.test/post/{user_id}/uploaded.{extension}"
+
+    def override_get_media_service() -> MediaService:
+        return TestMediaService()
+
     app.dependency_overrides[get_auth_service] = override_get_auth_service
     app.dependency_overrides[get_post_service] = override_get_post_service
+    app.dependency_overrides[get_media_service] = override_get_media_service
     client = TestClient(app)
     try:
         yield client
@@ -77,17 +104,14 @@ def test_create_post_and_get_post(posts_client: TestClient) -> None:
     create_response = posts_client.post(
         "/api/v1/posts",
         headers=headers,
-        json={
-            "text": "Первый пост",
-            "medias": ["https://example.com/first.jpg"],
-            "disable_comments": False,
-        },
+        data={"text": "Первый пост", "disable_comments": "false"},
+        files={"image": ("first.jpg", b"fake-jpg-content", "image/jpeg")},
     )
 
     assert create_response.status_code == 201
     payload = create_response.json()
     assert payload["text"] == "Первый пост"
-    assert payload["medias"] == ["https://example.com/first.jpg"]
+    assert payload["medias"] == [f"https://media.test/post/{payload['author']['id']}/uploaded.jpg"]
     assert payload["likes_count"] == 0
     assert payload["author"]["name"] == "Автор"
 
@@ -109,12 +133,14 @@ def test_feed_returns_posts_from_all_users(posts_client: TestClient) -> None:
     posts_client.post(
         "/api/v1/posts",
         headers=headers_a,
-        json={"text": "Пост A", "medias": ["https://example.com/a.jpg"], "disable_comments": False},
+        data={"text": "Пост A", "disable_comments": "false"},
+        files={"image": ("a.jpg", b"image-a", "image/jpeg")},
     )
     posts_client.post(
         "/api/v1/posts",
         headers=headers_b,
-        json={"text": "Пост B", "medias": ["https://example.com/b.jpg"], "disable_comments": False},
+        data={"text": "Пост B", "disable_comments": "false"},
+        files={"image": ("b.jpg", b"image-b", "image/jpeg")},
     )
 
     response = posts_client.get("/api/v1/posts?limit=20&offset=0", headers=headers_a)
@@ -136,11 +162,8 @@ def test_update_and_delete_post(posts_client: TestClient) -> None:
     create_response = posts_client.post(
         "/api/v1/posts",
         headers=headers,
-        json={
-            "text": "Старый текст",
-            "medias": ["https://example.com/old.jpg"],
-            "disable_comments": False,
-        },
+        data={"text": "Старый текст", "disable_comments": "false"},
+        files={"image": ("old.jpg", b"old-image", "image/jpeg")},
     )
     post_id = create_response.json()["id"]
 
@@ -178,11 +201,8 @@ def test_like_and_unlike_post(posts_client: TestClient) -> None:
     create_response = posts_client.post(
         "/api/v1/posts",
         headers=author_headers,
-        json={
-            "text": "Пост для лайка",
-            "medias": ["https://example.com/like.jpg"],
-            "disable_comments": False,
-        },
+        data={"text": "Пост для лайка", "disable_comments": "false"},
+        files={"image": ("like.jpg", b"like-image", "image/jpeg")},
     )
     post_id = create_response.json()["id"]
 

@@ -7,6 +7,7 @@ from backend.app.services.auth_service import (
     LoginAlreadyExistsError,
 )
 from backend.app.services.health_service import build_health_payload
+from backend.app.services.media_service import MediaService, MediaUploadError
 from backend.app.services.post_service import (
     PostNotFoundError,
     PostPermissionError,
@@ -19,6 +20,8 @@ __all__ = [
     "AuthValidationError",
     "InvalidCredentialsError",
     "LoginAlreadyExistsError",
+    "MediaService",
+    "MediaUploadError",
     "PostNotFoundError",
     "PostPermissionError",
     "PostService",

@@ -4,9 +4,14 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.app.api.dependencies.services import get_auth_service, get_post_service
+from backend.app.api.dependencies.services import (
+    get_auth_service,
+    get_media_service,
+    get_post_service,
+)
 from backend.app.db.session import get_db_session
 from backend.app.services.auth_service import AuthService
+from backend.app.services.media_service import MediaService
 from backend.app.services.post_service import PostService
 
 
@@ -47,3 +52,11 @@ def test_get_post_service_returns_post_service() -> None:
     assert isinstance(service, PostService)
 
     session.close()
+
+
+@pytest.mark.unit
+def test_get_media_service_returns_media_service() -> None:
+    """Проверяет создание MediaService из dependency-фабрики."""
+    service = get_media_service()
+
+    assert isinstance(service, MediaService)

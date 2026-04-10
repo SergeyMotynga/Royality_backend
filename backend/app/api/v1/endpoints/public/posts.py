@@ -1,15 +1,25 @@
 """Публичные endpoint-ы постов."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    status,
+)
 
 from backend.app.api.dependencies.auth import CurrentUser, get_current_user
-from backend.app.api.dependencies.services import get_post_service
+from backend.app.api.dependencies.services import get_media_service, get_post_service
 from backend.app.schemas.post import (
     PostAuthorResponse,
-    PostCreateRequest,
     PostResponse,
     PostUpdateRequest,
 )
+from backend.app.services.media_service import MediaService, MediaUploadError
 from backend.app.services.post_service import (
     PostNotFoundError,
     PostPermissionError,
@@ -39,19 +49,31 @@ def _build_post_response(post: PostResult) -> PostResponse:
 
 
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
-def create_post(
-    payload: PostCreateRequest,
+async def create_post(
+    text: str = Form(...),
+    image: UploadFile = File(...),
+    disable_comments: bool = Form(default=False),
     current_user: CurrentUser = Depends(get_current_user),
     service: PostService = Depends(get_post_service),
+    media_service: MediaService = Depends(get_media_service),
 ) -> PostResponse:
     """Создает новый пост текущего пользователя."""
     try:
+        image_payload = await image.read()
+        media_url = media_service.upload_post_image(
+            user_id=current_user.user_id,
+            file_name=image.filename,
+            content_type=image.content_type,
+            payload=image_payload,
+        )
         post = service.create_post(
             user_id=current_user.user_id,
-            text=payload.text,
-            medias=payload.medias,
-            disable_comments=payload.disable_comments,
+            text=text,
+            medias=[media_url],
+            disable_comments=disable_comments,
         )
+    except MediaUploadError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except PostValidationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except PostNotFoundError as exc:

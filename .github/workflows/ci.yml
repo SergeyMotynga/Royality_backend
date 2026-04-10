@@ -72,6 +72,7 @@ jobs:
           ROYALITY_MINIO_ROOT_USER=ci-minio-user
           ROYALITY_MINIO_ROOT_PASSWORD=ci-minio-password
           ROYALITY_MINIO_ENDPOINT=localhost:9000
+          ROYALITY_MINIO_PUBLIC_ENDPOINT=localhost:9000
           ROYALITY_MINIO_API_PORT=9000
           ROYALITY_MINIO_CONSOLE_PORT=9001
           ROYALITY_MINIO_BUCKET_NAME=royality-media
@@ -83,6 +84,7 @@ jobs:
           ROYALITY_DOCKER_POSTGRES_PORT=5432
           ROYALITY_DOCKER_DATABASE_URL=postgresql+psycopg://royality:royality@postgres:5432/royality
           ROYALITY_DOCKER_MINIO_ENDPOINT=minio:9000
+          ROYALITY_DOCKER_MINIO_PUBLIC_ENDPOINT=localhost:9000
           ROYALITY_DOCKER_MINIO_SECURE=false
           EOF
 

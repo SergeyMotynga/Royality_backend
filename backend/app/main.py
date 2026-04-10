@@ -11,7 +11,10 @@ from backend.app.services.health_service import build_health_payload
 settings = get_settings()
 setup_logging(settings.log_level)
 
-app = FastAPI(title=settings.app_title)
+app = FastAPI(
+    title=settings.app_title,
+    swagger_ui_parameters={"persistAuthorization": True},
+)
 register_exception_handlers(app)
 app.include_router(api_router)
 
