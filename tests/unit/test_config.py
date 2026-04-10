@@ -8,6 +8,7 @@ BASE_ENV = {
     "ROYALITY_APP_TITLE": "Royality Backend Test",
     "ROYALITY_ENV": "test",
     "ROYALITY_LOG_LEVEL": "INFO",
+    "ROYALITY_SECRET_KEY": "test-secret",
     "ROYALITY_APP_HOST": "127.0.0.1",
     "ROYALITY_APP_PORT": "8000",
     "ROYALITY_POSTGRES_USER": "user",

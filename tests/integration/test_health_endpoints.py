@@ -23,8 +23,8 @@ def test_public_health_endpoint(api_client) -> None:
 def test_admin_health_requires_superuser(api_client) -> None:
     """Проверяет, что admin health endpoint закрыт без роли администратора."""
     response = api_client.get("/api/v1/admin/health")
-    assert response.status_code == 403
-    assert response.json() == {"detail": "Недостаточно прав доступа"}
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Требуется авторизация"}
 
 
 @pytest.mark.integration
