@@ -126,6 +126,25 @@ def test_create_post_and_get_post(posts_client: TestClient) -> None:
 
 
 @pytest.mark.integration
+def test_create_post_without_image(posts_client: TestClient) -> None:
+    """Проверяет создание поста без изображения."""
+    token = _signup_and_login(posts_client, login=f"user_{uuid4().hex[:8]}", name="Автор")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    create_response = posts_client.post(
+        "/api/v1/posts",
+        headers=headers,
+        data={"text": "Текстовый пост", "disable_comments": "false"},
+    )
+
+    assert create_response.status_code == 201
+    payload = create_response.json()
+    assert payload["text"] == "Текстовый пост"
+    assert payload["medias"] == []
+    assert payload["likes_count"] == 0
+
+
+@pytest.mark.integration
 def test_feed_returns_posts_from_all_users(posts_client: TestClient) -> None:
     """Проверяет, что в ленту попадают посты разных пользователей."""
     token_a = _signup_and_login(posts_client, login=f"user_{uuid4().hex[:8]}", name="Автор A")

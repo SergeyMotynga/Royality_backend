@@ -52,7 +52,7 @@ def _build_post_response(post: PostResult) -> PostResponse:
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
     text: str = Form(...),
-    image: UploadFile = File(...),
+    image: UploadFile | None = File(default=None),
     disable_comments: bool = Form(default=False),
     current_user: CurrentUser = Depends(get_current_user),
     service: PostService = Depends(get_post_service),
@@ -60,17 +60,20 @@ async def create_post(
 ) -> PostResponse:
     """Создает новый пост текущего пользователя."""
     try:
-        image_payload = await image.read()
-        media_url = media_service.upload_post_image(
-            user_id=current_user.user_id,
-            file_name=image.filename,
-            content_type=image.content_type,
-            payload=image_payload,
-        )
+        medias: list[str] = []
+        if image is not None:
+            image_payload = await image.read()
+            media_url = media_service.upload_post_image(
+                user_id=current_user.user_id,
+                file_name=image.filename,
+                content_type=image.content_type,
+                payload=image_payload,
+            )
+            medias = [media_url]
         post = service.create_post(
             user_id=current_user.user_id,
             text=text,
-            medias=[media_url],
+            medias=medias,
             disable_comments=disable_comments,
         )
     except MediaUploadError as exc:

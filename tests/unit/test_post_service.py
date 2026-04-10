@@ -51,6 +51,38 @@ def test_create_post_success(repository_mock_factory) -> None:
 
 
 @pytest.mark.unit
+def test_create_post_without_media_success(repository_mock_factory) -> None:
+    """Проверяет успешное создание поста без изображений."""
+    user_id = uuid4()
+    created_at = datetime.now(UTC)
+    user = SimpleNamespace(id=user_id, name="Тестовый автор")
+    created_post = SimpleNamespace(
+        id=uuid4(),
+        text="Текст без картинки",
+        disable_comments=False,
+        created_at=created_at,
+        author_id=user_id,
+        author=user,
+        medias=[],
+    )
+
+    user_crud = repository_mock_factory(sync_methods={"get_by_id": user})
+    post_crud = repository_mock_factory(sync_methods={"create_post": created_post})
+    service = PostService(post_crud=post_crud, user_crud=user_crud)
+
+    result = service.create_post(
+        user_id=str(user_id),
+        text="Текст без картинки",
+        medias=[],
+        disable_comments=False,
+    )
+
+    assert result.id == created_post.id
+    assert result.text == "Текст без картинки"
+    assert result.medias == []
+
+
+@pytest.mark.unit
 def test_create_post_validation_error(repository_mock_factory) -> None:
     """Проверяет ошибку валидации при создании поста."""
     user_crud = repository_mock_factory(sync_methods={"get_by_id": object()})

@@ -68,7 +68,8 @@ class PostService:
         normalized_medias = [media.strip() for media in medias]
         try:
             validate_post_text(text=text)
-            validate_post_medias(medias=normalized_medias)
+            if normalized_medias:
+                validate_post_medias(medias=normalized_medias)
         except ValueError as exc:
             raise PostValidationError(str(exc)) from exc
 
