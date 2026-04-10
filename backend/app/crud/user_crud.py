@@ -86,9 +86,13 @@ class UserCrud:
         if follower_id == followee_id:
             return False
 
-        stmt = select(func.count()).select_from(UserFollower).where(
-            UserFollower.follower_id == follower_id,
-            UserFollower.followee_id == followee_id,
+        stmt = (
+            select(func.count())
+            .select_from(UserFollower)
+            .where(
+                UserFollower.follower_id == follower_id,
+                UserFollower.followee_id == followee_id,
+            )
         )
         return int(self._session.scalar(stmt) or 0) > 0
 
