@@ -1,5 +1,7 @@
 """CRUD-операции для сущности пользователя."""
 
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -16,6 +18,10 @@ class UserCrud:
         """Возвращает пользователя по логину."""
         stmt = select(User).where(User.login == login)
         return self._session.scalar(stmt)
+
+    def get_by_id(self, user_id: UUID) -> User | None:
+        """Возвращает пользователя по идентификатору."""
+        return self._session.get(User, user_id)
 
     def create_user(self, login: str, password_hash: str, name: str) -> User:
         """Создает пользователя и возвращает сохраненную сущность."""

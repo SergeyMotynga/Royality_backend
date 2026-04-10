@@ -43,3 +43,16 @@ def test_create_user_and_get_by_login(db_session: Session) -> None:
     assert str(created.id) == str(found.id)
     assert found.login == "test-user"
     assert found.name == "Тестовый"
+
+
+@pytest.mark.unit
+def test_get_by_id_returns_user(db_session: Session) -> None:
+    """Проверяет поиск пользователя по идентификатору."""
+    crud = UserCrud(session=db_session)
+    created = crud.create_user(login="by-id-user", password_hash="hash", name="По ID")
+
+    found = crud.get_by_id(user_id=created.id)
+
+    assert found is not None
+    assert str(found.id) == str(created.id)
+    assert found.login == "by-id-user"

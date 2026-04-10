@@ -1,12 +1,17 @@
 """ORM-модель пользователя."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime, String, Uuid, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.db.base import Base
+
+if TYPE_CHECKING:
+    from backend.app.models.post import Post
+    from backend.app.models.post_like import PostLike
 
 
 class User(Base):
@@ -24,3 +29,5 @@ class User(Base):
         nullable=False,
         server_default=func.now(),
     )
+    posts: Mapped[list["Post"]] = relationship(back_populates="author")
+    liked_posts: Mapped[list["PostLike"]] = relationship(back_populates="user")
