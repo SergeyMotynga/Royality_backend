@@ -32,32 +32,6 @@ jobs:
           --health-retries 10
 
     env:
-      APP_TITLE: Royality Backend
-      ENV: ci
-      LOG_LEVEL: INFO
-      APP_HOST: 0.0.0.0
-      APP_PORT: "8000"
-      POSTGRES_USER: royality
-      POSTGRES_PASSWORD: royality
-      POSTGRES_DB: royality
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: "5432"
-      DATABASE_URL: postgresql+psycopg://royality:royality@localhost:5432/royality
-      MINIO_ROOT_USER: ci-minio-user
-      MINIO_ROOT_PASSWORD: ci-minio-password
-      MINIO_ENDPOINT: localhost:9000
-      MINIO_API_PORT: "9000"
-      MINIO_CONSOLE_PORT: "9001"
-      MINIO_BUCKET_NAME: royality-media
-      MINIO_REGION: us-east-1
-      MINIO_SECURE: "false"
-      DOCKER_APP_HOST: 0.0.0.0
-      DOCKER_APP_PORT: "8000"
-      DOCKER_POSTGRES_HOST: postgres
-      DOCKER_POSTGRES_PORT: "5432"
-      DOCKER_DATABASE_URL: postgresql+psycopg://royality:royality@postgres:5432/royality
-      DOCKER_MINIO_ENDPOINT: minio:9000
-      DOCKER_MINIO_SECURE: "false"
       PYTHONUNBUFFERED: "1"
 
     steps:
@@ -81,7 +55,35 @@ jobs:
         run: poetry install --with dev
 
       - name: Подготовка .env
-        run: cp .env.example .env
+        run: |
+          cat > .env <<'EOF'
+          ROYALITY_APP_TITLE=Royality Backend
+          ROYALITY_ENV=ci
+          ROYALITY_LOG_LEVEL=INFO
+          ROYALITY_APP_HOST=127.0.0.1
+          ROYALITY_APP_PORT=8000
+          ROYALITY_POSTGRES_USER=royality
+          ROYALITY_POSTGRES_PASSWORD=royality
+          ROYALITY_POSTGRES_DB=royality
+          ROYALITY_POSTGRES_HOST=localhost
+          ROYALITY_POSTGRES_PORT=5432
+          ROYALITY_DATABASE_URL=postgresql+psycopg://royality:royality@localhost:5432/royality
+          ROYALITY_MINIO_ROOT_USER=ci-minio-user
+          ROYALITY_MINIO_ROOT_PASSWORD=ci-minio-password
+          ROYALITY_MINIO_ENDPOINT=localhost:9000
+          ROYALITY_MINIO_API_PORT=9000
+          ROYALITY_MINIO_CONSOLE_PORT=9001
+          ROYALITY_MINIO_BUCKET_NAME=royality-media
+          ROYALITY_MINIO_REGION=us-east-1
+          ROYALITY_MINIO_SECURE=false
+          ROYALITY_DOCKER_APP_HOST=0.0.0.0
+          ROYALITY_DOCKER_APP_PORT=8000
+          ROYALITY_DOCKER_POSTGRES_HOST=postgres
+          ROYALITY_DOCKER_POSTGRES_PORT=5432
+          ROYALITY_DOCKER_DATABASE_URL=postgresql+psycopg://royality:royality@postgres:5432/royality
+          ROYALITY_DOCKER_MINIO_ENDPOINT=minio:9000
+          ROYALITY_DOCKER_MINIO_SECURE=false
+          EOF
 
       - name: Валидация docker-compose
         run: |

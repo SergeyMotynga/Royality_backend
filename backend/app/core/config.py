@@ -3,7 +3,15 @@
 from functools import lru_cache
 
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    DotEnvSettingsSource,
+    EnvSettingsSource,
+    InitSettingsSource,
+    PydanticBaseSettingsSource,
+    SecretsSettingsSource,
+    SettingsConfigDict,
+)
 
 
 class Settings(BaseSettings):
@@ -16,26 +24,38 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
     )
 
-    app_title: str = Field(alias="APP_TITLE")
-    env: str = Field(alias="ENV")
-    log_level: str = Field(alias="LOG_LEVEL")
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: InitSettingsSource,
+        env_settings: EnvSettingsSource,
+        dotenv_settings: DotEnvSettingsSource,
+        file_secret_settings: SecretsSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """Определяет порядок источников настроек с приоритетом .env."""
+        return init_settings, dotenv_settings, env_settings, file_secret_settings
 
-    app_host: str = Field(alias="APP_HOST")
-    app_port: int = Field(alias="APP_PORT")
+    app_title: str = Field(alias="ROYALITY_APP_TITLE")
+    env: str = Field(alias="ROYALITY_ENV")
+    log_level: str = Field(alias="ROYALITY_LOG_LEVEL")
 
-    postgres_user: str = Field(alias="POSTGRES_USER")
-    postgres_password: str = Field(alias="POSTGRES_PASSWORD")
-    postgres_db: str = Field(alias="POSTGRES_DB")
-    postgres_host: str = Field(alias="POSTGRES_HOST")
-    postgres_port: int = Field(alias="POSTGRES_PORT")
-    database_url: str | None = Field(default=None, alias="DATABASE_URL")
+    app_host: str = Field(alias="ROYALITY_APP_HOST")
+    app_port: int = Field(alias="ROYALITY_APP_PORT")
 
-    minio_root_user: str = Field(alias="MINIO_ROOT_USER")
-    minio_root_password: str = Field(alias="MINIO_ROOT_PASSWORD")
-    minio_endpoint: str = Field(alias="MINIO_ENDPOINT")
-    minio_bucket_name: str = Field(alias="MINIO_BUCKET_NAME")
-    minio_region: str = Field(alias="MINIO_REGION")
-    minio_secure: bool = Field(alias="MINIO_SECURE")
+    postgres_user: str = Field(alias="ROYALITY_POSTGRES_USER")
+    postgres_password: str = Field(alias="ROYALITY_POSTGRES_PASSWORD")
+    postgres_db: str = Field(alias="ROYALITY_POSTGRES_DB")
+    postgres_host: str = Field(alias="ROYALITY_POSTGRES_HOST")
+    postgres_port: int = Field(alias="ROYALITY_POSTGRES_PORT")
+    database_url: str | None = Field(default=None, alias="ROYALITY_DATABASE_URL")
+
+    minio_root_user: str = Field(alias="ROYALITY_MINIO_ROOT_USER")
+    minio_root_password: str = Field(alias="ROYALITY_MINIO_ROOT_PASSWORD")
+    minio_endpoint: str = Field(alias="ROYALITY_MINIO_ENDPOINT")
+    minio_bucket_name: str = Field(alias="ROYALITY_MINIO_BUCKET_NAME")
+    minio_region: str = Field(alias="ROYALITY_MINIO_REGION")
+    minio_secure: bool = Field(alias="ROYALITY_MINIO_SECURE")
 
     @property
     def resolved_database_url(self) -> str:
