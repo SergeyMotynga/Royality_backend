@@ -44,6 +44,7 @@ def _build_post_response(post: PostResult) -> PostResponse:
             avatar_url=post.author.avatar_url,
         ),
         likes_count=post.likes_count,
+        is_liked=post.is_liked,
         created_at=post.created_at,
     )
 
@@ -89,9 +90,12 @@ def get_feed(
     service: PostService = Depends(get_post_service),
 ) -> list[PostResponse]:
     """Возвращает ленту постов всех пользователей."""
-    _ = current_user
     try:
-        posts = service.get_feed(limit=limit, offset=offset)
+        posts = service.get_feed(
+            limit=limit,
+            offset=offset,
+            viewer_user_id=current_user.user_id,
+        )
     except PostValidationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return [_build_post_response(post=post) for post in posts]
@@ -104,9 +108,11 @@ def get_post(
     service: PostService = Depends(get_post_service),
 ) -> PostResponse:
     """Возвращает пост по идентификатору."""
-    _ = current_user
     try:
-        post = service.get_post(post_id=post_id)
+        post = service.get_post(
+            post_id=post_id,
+            viewer_user_id=current_user.user_id,
+        )
     except PostValidationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except PostNotFoundError as exc:

@@ -5,6 +5,7 @@ from backend.app.api.dependencies.services import (
     get_auth_service,
     get_media_service,
     get_post_service,
+    get_profile_service,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "get_current_user",
     "get_media_service",
     "get_post_service",
+    "get_profile_service",
 ]

@@ -111,3 +111,24 @@ class PostCrud:
         )
         rows = self._session.execute(stmt).all()
         return {post_id: int(likes_count) for post_id, likes_count in rows}
+
+    def is_liked(self, post_id: UUID, user_id: UUID) -> bool:
+        """Проверяет, поставил ли пользователь лайк посту."""
+        return self._session.get(PostLike, (post_id, user_id)) is not None
+
+    def get_liked_post_ids(self, post_ids: Sequence[UUID], user_id: UUID) -> set[UUID]:
+        """Возвращает множество идентификаторов постов, лайкнутых пользователем."""
+        if not post_ids:
+            return set()
+
+        stmt = select(PostLike.post_id).where(
+            PostLike.user_id == user_id,
+            PostLike.post_id.in_(post_ids),
+        )
+        rows = self._session.execute(stmt).scalars().all()
+        return set(rows)
+
+    def count_posts_by_author(self, author_id: UUID) -> int:
+        """Возвращает количество постов автора."""
+        stmt = select(func.count()).select_from(Post).where(Post.author_id == author_id)
+        return int(self._session.scalar(stmt) or 0)

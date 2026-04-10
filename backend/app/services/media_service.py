@@ -66,6 +66,21 @@ class MediaService:
             payload=payload,
         )
 
+    def upload_avatar_image(
+        self,
+        user_id: str,
+        file_name: str | None,
+        content_type: str | None,
+        payload: bytes,
+    ) -> str:
+        """Загружает аватар пользователя и возвращает URL объекта."""
+        return self.upload_image(
+            tag=f"profile/{user_id}",
+            file_name=file_name,
+            content_type=content_type,
+            payload=payload,
+        )
+
     def upload_image(
         self,
         tag: str,

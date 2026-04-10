@@ -8,6 +8,7 @@ from backend.app.schemas.post import (
     PostResponse,
     PostUpdateRequest,
 )
+from backend.app.schemas.profile import UserProfileResponse, UserProfileUpdateRequest
 
 __all__ = [
     "LoginRequest",
@@ -17,6 +18,8 @@ __all__ = [
     "PostCreateRequest",
     "PostResponse",
     "PostUpdateRequest",
+    "UserProfileResponse",
+    "UserProfileUpdateRequest",
     "SignupRequest",
     "SignupResponse",
 ]

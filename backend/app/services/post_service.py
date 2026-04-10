@@ -45,6 +45,7 @@ class PostResult:
     disable_comments: bool
     author: PostAuthorResult
     likes_count: int
+    is_liked: bool
     created_at: datetime
 
 
@@ -81,28 +82,46 @@ class PostService:
             medias=normalized_medias,
             disable_comments=disable_comments,
         )
-        return self._build_post_result(post=post, likes_count=0)
+        return self._build_post_result(post=post, likes_count=0, is_liked=False)
 
-    def get_post(self, post_id: str) -> PostResult:
+    def get_post(self, post_id: str, viewer_user_id: str) -> PostResult:
         """Возвращает пост по идентификатору."""
         parsed_post_id = self._parse_uuid(raw_uuid=post_id, field_name="поста")
+        parsed_viewer_user_id = self._parse_uuid(
+            raw_uuid=viewer_user_id,
+            field_name="пользователя",
+        )
         post = self._post_crud.get_post_by_id(post_id=parsed_post_id)
         if post is None:
             raise PostNotFoundError("Пост не найден")
         likes_count = self._post_crud.count_likes(post_id=parsed_post_id)
-        return self._build_post_result(post=post, likes_count=likes_count)
+        is_liked = self._post_crud.is_liked(post_id=parsed_post_id, user_id=parsed_viewer_user_id)
+        return self._build_post_result(post=post, likes_count=likes_count, is_liked=is_liked)
 
-    def get_feed(self, limit: int, offset: int) -> list[PostResult]:
+    def get_feed(self, limit: int, offset: int, viewer_user_id: str) -> list[PostResult]:
         """Возвращает ленту постов."""
+        parsed_viewer_user_id = self._parse_uuid(
+            raw_uuid=viewer_user_id,
+            field_name="пользователя",
+        )
         try:
             validate_posts_pagination(limit=limit, offset=offset)
         except ValueError as exc:
             raise PostValidationError(str(exc)) from exc
 
         posts = self._post_crud.list_feed(limit=limit, offset=offset)
-        like_count_map = self._post_crud.count_likes_for_posts(post_ids=[post.id for post in posts])
+        post_ids = [post.id for post in posts]
+        like_count_map = self._post_crud.count_likes_for_posts(post_ids=post_ids)
+        liked_post_ids = self._post_crud.get_liked_post_ids(
+            post_ids=post_ids,
+            user_id=parsed_viewer_user_id,
+        )
         return [
-            self._build_post_result(post=post, likes_count=like_count_map.get(post.id, 0))
+            self._build_post_result(
+                post=post,
+                likes_count=like_count_map.get(post.id, 0),
+                is_liked=post.id in liked_post_ids,
+            )
             for post in posts
         ]
 
@@ -164,7 +183,12 @@ class PostService:
             disable_comments=disable_comments,
         )
         likes_count = self._post_crud.count_likes(post_id=updated_post.id)
-        return self._build_post_result(post=updated_post, likes_count=likes_count)
+        is_liked = self._post_crud.is_liked(post_id=updated_post.id, user_id=parsed_user_id)
+        return self._build_post_result(
+            post=updated_post,
+            likes_count=likes_count,
+            is_liked=is_liked,
+        )
 
     def delete_post(self, user_id: str, post_id: str) -> None:
         """Удаляет пост автора."""
@@ -189,7 +213,7 @@ class PostService:
         except ValueError as exc:
             raise PostValidationError(f"Некорректный идентификатор {field_name}") from exc
 
-    def _build_post_result(self, post: Post, likes_count: int) -> PostResult:
+    def _build_post_result(self, post: Post, likes_count: int, is_liked: bool) -> PostResult:
         """Преобразует ORM-сущность в DTO сервиса."""
         media_urls = [media.url for media in post.medias]
         return PostResult(
@@ -200,8 +224,9 @@ class PostService:
             author=PostAuthorResult(
                 id=post.author.id,
                 name=post.author.name,
-                avatar_url=None,
+                avatar_url=post.author.avatar_url,
             ),
             likes_count=likes_count,
+            is_liked=is_liked,
             created_at=post.created_at,
         )

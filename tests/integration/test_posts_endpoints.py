@@ -113,13 +113,16 @@ def test_create_post_and_get_post(posts_client: TestClient) -> None:
     assert payload["text"] == "Первый пост"
     assert payload["medias"] == [f"https://media.test/post/{payload['author']['id']}/uploaded.jpg"]
     assert payload["likes_count"] == 0
+    assert payload["is_liked"] is False
     assert payload["author"]["name"] == "Автор"
 
     post_id = payload["id"]
     get_response = posts_client.get(f"/api/v1/posts/{post_id}", headers=headers)
 
     assert get_response.status_code == 200
-    assert get_response.json()["id"] == post_id
+    get_payload = get_response.json()
+    assert get_payload["id"] == post_id
+    assert get_payload["is_liked"] is False
 
 
 @pytest.mark.integration
@@ -151,6 +154,7 @@ def test_feed_returns_posts_from_all_users(posts_client: TestClient) -> None:
     texts = [post["text"] for post in payload]
     assert "Пост A" in texts
     assert "Пост B" in texts
+    assert all("is_liked" in post for post in payload)
 
 
 @pytest.mark.integration
@@ -182,6 +186,7 @@ def test_update_and_delete_post(posts_client: TestClient) -> None:
     assert updated_payload["text"] == "Новый текст"
     assert updated_payload["medias"] == ["https://example.com/new.jpg"]
     assert updated_payload["disable_comments"] is True
+    assert updated_payload["is_liked"] is False
 
     delete_response = posts_client.delete(f"/api/v1/posts/{post_id}", headers=headers)
     assert delete_response.status_code == 204
@@ -212,6 +217,11 @@ def test_like_and_unlike_post(posts_client: TestClient) -> None:
     get_after_like = posts_client.get(f"/api/v1/posts/{post_id}", headers=author_headers)
     assert get_after_like.status_code == 200
     assert get_after_like.json()["likes_count"] == 1
+    assert get_after_like.json()["is_liked"] is False
+
+    liker_view_after_like = posts_client.get(f"/api/v1/posts/{post_id}", headers=liker_headers)
+    assert liker_view_after_like.status_code == 200
+    assert liker_view_after_like.json()["is_liked"] is True
 
     unlike_response = posts_client.delete(f"/api/v1/posts/{post_id}/like", headers=liker_headers)
     assert unlike_response.status_code == 204
@@ -219,3 +229,7 @@ def test_like_and_unlike_post(posts_client: TestClient) -> None:
     get_after_unlike = posts_client.get(f"/api/v1/posts/{post_id}", headers=author_headers)
     assert get_after_unlike.status_code == 200
     assert get_after_unlike.json()["likes_count"] == 0
+
+    liker_view_after_unlike = posts_client.get(f"/api/v1/posts/{post_id}", headers=liker_headers)
+    assert liker_view_after_unlike.status_code == 200
+    assert liker_view_after_unlike.json()["is_liked"] is False

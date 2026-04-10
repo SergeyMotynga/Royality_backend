@@ -38,4 +38,5 @@ class PostResponse(BaseModel):
     disable_comments: bool
     author: PostAuthorResponse
     likes_count: int
+    is_liked: bool
     created_at: datetime

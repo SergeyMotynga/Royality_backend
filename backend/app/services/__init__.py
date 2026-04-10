@@ -14,6 +14,11 @@ from backend.app.services.post_service import (
     PostService,
     PostValidationError,
 )
+from backend.app.services.profile_service import (
+    ProfileNotFoundError,
+    ProfileService,
+    ProfileValidationError,
+)
 
 __all__ = [
     "AuthService",
@@ -26,5 +31,8 @@ __all__ = [
     "PostPermissionError",
     "PostService",
     "PostValidationError",
+    "ProfileNotFoundError",
+    "ProfileService",
+    "ProfileValidationError",
     "build_health_payload",
 ]
