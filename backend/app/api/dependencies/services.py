@@ -10,6 +10,7 @@ from backend.app.db.session import get_db_session
 from backend.app.services.auth_service import AuthService
 from backend.app.services.media_service import MediaService
 from backend.app.services.post_service import PostService
+from backend.app.services.profile_service import ProfileService
 
 
 def get_auth_service(session: Session = Depends(get_db_session)) -> AuthService:
@@ -21,6 +22,11 @@ def get_auth_service(session: Session = Depends(get_db_session)) -> AuthService:
 def get_post_service(session: Session = Depends(get_db_session)) -> PostService:
     """Возвращает сервис работы с постами."""
     return PostService(post_crud=PostCrud(session=session), user_crud=UserCrud(session=session))
+
+
+def get_profile_service(session: Session = Depends(get_db_session)) -> ProfileService:
+    """Возвращает сервис работы с профилем пользователя."""
+    return ProfileService(user_crud=UserCrud(session=session), post_crud=PostCrud(session=session))
 
 
 def get_media_service() -> MediaService:

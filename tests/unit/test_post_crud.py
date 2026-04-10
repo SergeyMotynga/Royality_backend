@@ -86,14 +86,22 @@ def test_like_and_unlike_flow(db_session: Session) -> None:
     created_like = post_crud.add_like(post_id=post.id, user_id=liker.id)
     repeated_like = post_crud.add_like(post_id=post.id, user_id=liker.id)
     likes_count = post_crud.count_likes(post_id=post.id)
+    liked_post_ids = post_crud.get_liked_post_ids(post_ids=[post.id], user_id=liker.id)
+    is_liked = post_crud.is_liked(post_id=post.id, user_id=liker.id)
     removed_like = post_crud.remove_like(post_id=post.id, user_id=liker.id)
     likes_count_after_remove = post_crud.count_likes(post_id=post.id)
+    liked_post_ids_after_remove = post_crud.get_liked_post_ids(post_ids=[post.id], user_id=liker.id)
+    is_liked_after_remove = post_crud.is_liked(post_id=post.id, user_id=liker.id)
 
     assert created_like is True
     assert repeated_like is False
     assert likes_count == 1
+    assert liked_post_ids == {post.id}
+    assert is_liked is True
     assert removed_like is True
     assert likes_count_after_remove == 0
+    assert liked_post_ids_after_remove == set()
+    assert is_liked_after_remove is False
 
 
 @pytest.mark.unit

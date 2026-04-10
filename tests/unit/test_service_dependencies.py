@@ -8,11 +8,13 @@ from backend.app.api.dependencies.services import (
     get_auth_service,
     get_media_service,
     get_post_service,
+    get_profile_service,
 )
 from backend.app.db.session import get_db_session
 from backend.app.services.auth_service import AuthService
 from backend.app.services.media_service import MediaService
 from backend.app.services.post_service import PostService
+from backend.app.services.profile_service import ProfileService
 
 
 @pytest.mark.unit
@@ -60,3 +62,17 @@ def test_get_media_service_returns_media_service() -> None:
     service = get_media_service()
 
     assert isinstance(service, MediaService)
+
+
+@pytest.mark.unit
+def test_get_profile_service_returns_profile_service() -> None:
+    """Проверяет создание ProfileService из dependency-фабрики."""
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    session_factory = sessionmaker(bind=engine)
+    session = session_factory()
+
+    service = get_profile_service(session=session)
+
+    assert isinstance(service, ProfileService)
+
+    session.close()
