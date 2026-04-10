@@ -237,6 +237,13 @@ def test_upload_my_avatar_success(profile_context: tuple[TestClient, Session]) -
     payload = response.json()
     assert payload["url"] == f"https://media.test/profile/{user_id}/avatar.png"
 
+    me_response = client.get(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert me_response.status_code == 200
+    assert me_response.json()["avatar_url"] == f"https://media.test/profile/{user_id}/avatar.png"
+
 
 @pytest.mark.integration
 def test_get_profile_requires_auth(profile_context: tuple[TestClient, Session]) -> None:

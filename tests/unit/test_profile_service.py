@@ -179,3 +179,35 @@ def test_unfollow_user_success(repository_mock_factory) -> None:
         follower_id=current_user_id,
         followee_id=target_user_id,
     )
+
+
+@pytest.mark.unit
+def test_update_my_avatar_success(repository_mock_factory) -> None:
+    """Проверяет успешное обновление аватарки текущего пользователя."""
+    user_id = uuid4()
+    user = SimpleNamespace(
+        id=user_id,
+        name="Игрок",
+        avatar_url=None,
+        bio=None,
+        level=1,
+        created_at=datetime.now(UTC),
+    )
+    user_crud = repository_mock_factory(
+        sync_methods={
+            "get_by_id": user,
+            "update_avatar_url": user,
+        }
+    )
+    post_crud = repository_mock_factory()
+    service = ProfileService(user_crud=user_crud, post_crud=post_crud)
+
+    service.update_my_avatar(
+        current_user_id=str(user_id),
+        avatar_url="https://example.com/avatar.png",
+    )
+
+    user_crud.update_avatar_url.assert_called_once_with(
+        user=user,
+        avatar_url="https://example.com/avatar.png",
+    )

@@ -88,6 +88,20 @@ class ProfileService:
         )
         return self._build_profile_result(user=updated_user, viewer_user_id=parsed_user_id)
 
+    def update_my_avatar(self, current_user_id: str, avatar_url: str) -> None:
+        """Обновляет аватар текущего пользователя."""
+        parsed_user_id = self._parse_uuid(raw_uuid=current_user_id, field_name="пользователя")
+        user = self._user_crud.get_by_id(user_id=parsed_user_id)
+        if user is None:
+            raise ProfileNotFoundError("Профиль пользователя не найден")
+
+        try:
+            validate_profile_avatar_url(avatar_url=avatar_url)
+        except ValueError as exc:
+            raise ProfileValidationError(str(exc)) from exc
+
+        self._user_crud.update_avatar_url(user=user, avatar_url=avatar_url.strip())
+
     def follow_user(self, current_user_id: str, target_user_id: str) -> None:
         """Подписывает текущего пользователя на другого пользователя."""
         follower_id = self._parse_uuid(raw_uuid=current_user_id, field_name="пользователя")

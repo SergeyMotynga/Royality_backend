@@ -50,6 +50,14 @@ class UserCrud:
         self._session.refresh(user)
         return user
 
+    def update_avatar_url(self, user: User, avatar_url: str | None) -> User:
+        """Обновляет URL аватарки пользователя."""
+        user.avatar_url = avatar_url
+        self._session.add(user)
+        self._session.commit()
+        self._session.refresh(user)
+        return user
+
     def add_follower(self, follower_id: UUID, followee_id: UUID) -> bool:
         """Создает подписку пользователя на пользователя."""
         if follower_id == followee_id:
