@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 from backend.app.api.deps.auth import (
-    NoopEmailTaskPublisher,
+    NoopSmsTaskPublisher,
     _build_redis_client,
     get_auth_service,
-    get_email_task_publisher,
     get_redis_client,
+    get_sms_task_publisher,
 )
 from backend.app.core.config import Settings
 from backend.app.services.auth import AuthService
@@ -25,16 +25,22 @@ class _FakeRedisClient:
         _ = ex
         return True
 
+    async def get(self, _key: str) -> str | None:
+        return None
 
-def test_noop_email_task_publisher_implements_contract() -> None:
-    publisher = NoopEmailTaskPublisher()
-    result = publisher.enqueue_email_verification(email="user@example.com", code="123456")
+    async def delete(self, _key: str) -> int:
+        return 1
+
+
+def test_noop_sms_task_publisher_implements_contract() -> None:
+    publisher = NoopSmsTaskPublisher()
+    result = publisher.enqueue_phone_verification(phone_number="79991234567", code="123456")
     assert result is None
 
 
-def test_get_email_task_publisher_returns_noop_implementation() -> None:
-    publisher = get_email_task_publisher()
-    assert isinstance(publisher, NoopEmailTaskPublisher)
+def test_get_sms_task_publisher_returns_noop_implementation() -> None:
+    publisher = get_sms_task_publisher()
+    assert isinstance(publisher, NoopSmsTaskPublisher)
 
 
 def test_get_redis_client_uses_cached_builder() -> None:
@@ -51,20 +57,22 @@ def test_get_redis_client_uses_cached_builder() -> None:
 async def test_get_auth_service_builds_service_with_adapters() -> None:
     settings = Settings(
         REDIS_URL="redis://localhost:6379/0",
-        REGISTER_RATE_LIMIT_MAX_REQUESTS_PER_EMAIL=7,
-        REGISTER_RATE_LIMIT_MAX_REQUESTS_PER_IP=21,
-        REGISTER_RATE_LIMIT_WINDOW_SECONDS=120,
+        AUTH_RATE_LIMIT_MAX_REQUESTS_PER_PHONE=7,
+        AUTH_RATE_LIMIT_MAX_REQUESTS_PER_IP=21,
+        AUTH_RATE_LIMIT_WINDOW_SECONDS=120,
+        AUTH_CODE_TTL_SECONDS=600,
     )
     fake_session = object()
     fake_redis = _FakeRedisClient()
-    publisher = NoopEmailTaskPublisher()
+    publisher = NoopSmsTaskPublisher()
 
     service = await get_auth_service(
         session=fake_session,  # type: ignore[arg-type]
         settings=settings,
         redis_client=fake_redis,  # type: ignore[arg-type]
-        email_task_publisher=publisher,
+        sms_task_publisher=publisher,
     )
 
     assert isinstance(service, AuthService)
-    assert service.settings.register_rate_limit_window_seconds == 120
+    assert service.settings.auth_rate_limit_window_seconds == 120
+    assert service.settings.auth_code_ttl_seconds == 600

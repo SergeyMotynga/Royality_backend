@@ -4,67 +4,105 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from backend.app.core.exceptions import WeakPasswordError
-from backend.app.core.security import (
-    DEFAULT_PASSWORD_MAX_LENGTH,
-    DEFAULT_PASSWORD_MIN_LENGTH,
-    validate_password_policy,
-)
+from backend.app.core.exceptions import InvalidPhoneNumberError
+from backend.app.validators.auth import normalize_phone_number
 
 
-class RegisterRequestSchema(BaseModel):
-    """Тело запроса регистрации пользователя."""
+class _PhoneSchema(BaseModel):
+    """Базовая схема с номером телефона для auth-сценариев."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    phone_number: str = Field(..., description="Номер телефона пользователя.")
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, value: str) -> str:
+        """Нормализует номер телефона и проверяет корректность формата."""
+        try:
+            return normalize_phone_number(value)
+        except InvalidPhoneNumberError as error:
+            raise ValueError(error.message) from error
+
+
+class RegisterRequestSchema(_PhoneSchema):
+    """Тело запроса на отправку OTP-кода подтверждения телефона."""
 
     model_config = ConfigDict(
         extra="forbid",
         json_schema_extra={
             "example": {
-                "email": "user@example.com",
-                "password": "valid_pass1!",
+                "phone_number": "+79991234567",
             }
         },
     )
 
-    email: EmailStr = Field(..., description="Email пользователя.")
-    password: str = Field(
-        ...,
-        min_length=DEFAULT_PASSWORD_MIN_LENGTH,
-        max_length=DEFAULT_PASSWORD_MAX_LENGTH,
-        description=(
-            "Пароль пользователя. Требования: 8-26 символов, минимум одна цифра, "
-            "минимум один спецсимвол, без пробелов."
-        ),
-    )
-
-    @field_validator("email", mode="before")
-    @classmethod
-    def normalize_email(cls, value: object) -> object:
-        """Обрезает пробелы вокруг email до форматной валидации."""
-        if isinstance(value, str):
-            return value.strip()
-        return value
-
-    @field_validator("password")
-    @classmethod
-    def validate_password(cls, value: str) -> str:
-        """Проверяет пароль по политике безопасности на входе API."""
-        try:
-            validate_password_policy(
-                value,
-                min_length=DEFAULT_PASSWORD_MIN_LENGTH,
-                max_length=DEFAULT_PASSWORD_MAX_LENGTH,
-            )
-        except WeakPasswordError as error:
-            raise ValueError(error.message) from error
-        return value
-
 
 class RegisterResponseSchema(BaseModel):
-    """Тело ответа при успешной регистрации."""
+    """Тело ответа после отправки OTP-кода."""
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
-    email: str
+    phone_number: str
+    ttl_seconds: int
+    resend_cooldown_seconds: int
+
+
+class ResendVerificationCodeRequestSchema(_PhoneSchema):
+    """Тело запроса повторной отправки OTP-кода."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "phone_number": "+79991234567",
+            }
+        },
+    )
+
+
+class ResendVerificationCodeResponseSchema(BaseModel):
+    """Тело ответа после повторной отправки OTP-кода."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    phone_number: str
+    ttl_seconds: int
+    resend_cooldown_seconds: int
+
+
+class VerifyCodeRequestSchema(_PhoneSchema):
+    """Тело запроса подтверждения OTP-кода."""
+
+    code: str = Field(..., min_length=6, max_length=6, description="Шестизначный OTP-код.")
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "phone_number": "+79991234567",
+                "code": "123456",
+            }
+        },
+    )
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, value: str) -> str:
+        """Проверяет, что OTP-код состоит только из цифр."""
+        if not value.isdigit():
+            raise ValueError("Код подтверждения должен состоять только из цифр.")
+        return value
+
+
+class VerifyCodeResponseSchema(BaseModel):
+    """Тело ответа после успешного подтверждения OTP-кода."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: UUID
+    phone_number: str
+    is_new_user: bool
+

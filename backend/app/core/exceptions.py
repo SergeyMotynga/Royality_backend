@@ -66,6 +66,31 @@ class EmailAlreadyRegisteredError(AppError):
         super().__init__(message)
 
 
+class SuperuserBootstrapDisabledError(AppError):
+    """Ошибка, когда попытка bootstrap суперпользователя недоступна."""
+
+    status_code = status.HTTP_409_CONFLICT
+    code = "superuser_bootstrap_disabled"
+
+    def __init__(
+        self,
+        message: str = "Bootstrap суперпользователя запрещен: superuser уже существует.",
+    ) -> None:
+        """Инициализирует ошибку запрета bootstrap первого суперпользователя."""
+        super().__init__(message)
+
+
+class InvalidPhoneNumberError(AppError):
+    """Ошибка, когда номер телефона не прошел валидацию."""
+
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+    code = "invalid_phone_number"
+
+    def __init__(self, message: str = "Некорректный формат номера телефона.") -> None:
+        """Инициализирует ошибку формата номера телефона."""
+        super().__init__(message)
+
+
 class WeakPasswordError(AppError):
     """Ошибка, когда пароль не прошел политику безопасности."""
 
@@ -103,6 +128,89 @@ class WeakPasswordError(AppError):
     def missing_special_symbol(cls) -> WeakPasswordError:
         """Возвращает ошибку, если пароль не содержит спецсимвол."""
         return cls("Пароль должен содержать хотя бы один спецсимвол.")
+
+
+class VerificationCodeExpiredError(AppError):
+    """Ошибка, когда код подтверждения отсутствует или истек."""
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = "verification_code_expired"
+
+    def __init__(self, message: str = "Код подтверждения истек. Запросите новый код.") -> None:
+        """Инициализирует ошибку истекшего кода подтверждения."""
+        super().__init__(message)
+
+
+class InvalidVerificationCodeError(AppError):
+    """Ошибка, когда код подтверждения не совпадает."""
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = "invalid_verification_code"
+
+    def __init__(self, *, attempts_left: int) -> None:
+        """Инициализирует ошибку неверного кода и оставшихся попыток."""
+        super().__init__(f"Неверный код подтверждения. Осталось попыток: {attempts_left}.")
+
+
+class VerificationCodeAttemptsExceededError(AppError):
+    """Ошибка, когда попытки ввода кода подтверждения исчерпаны."""
+
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "verification_attempts_exceeded"
+
+    def __init__(
+        self,
+        message: str = "Лимит попыток подтверждения исчерпан. Запросите новый код.",
+    ) -> None:
+        """Инициализирует ошибку исчерпания попыток ввода кода."""
+        super().__init__(message)
+
+
+class VerificationCodeResendNotAllowedError(AppError):
+    """Ошибка, когда повторный запрос кода сделан раньше cooldown."""
+
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "verification_resend_not_allowed"
+
+    def __init__(self, *, retry_after_seconds: int) -> None:
+        """Инициализирует ошибку повторной отправки до окончания cooldown."""
+        super().__init__(
+            "Повторная отправка кода пока недоступна. Попробуйте позже.",
+            headers={"Retry-After": str(retry_after_seconds)},
+        )
+
+
+class InvalidAccessTokenError(AppError):
+    """Ошибка некорректного access-токена."""
+
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "invalid_access_token"
+
+    def __init__(self, message: str = "Некорректный access-токен.") -> None:
+        """Инициализирует ошибку некорректного access-токена."""
+        super().__init__(message, headers={"WWW-Authenticate": "Bearer"})
+
+
+class AccessTokenExpiredError(AppError):
+    """Ошибка истекшего access-токена."""
+
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "access_token_expired"
+
+    def __init__(self, message: str = "Срок действия access-токена истек.") -> None:
+        """Инициализирует ошибку истекшего access-токена."""
+        super().__init__(message, headers={"WWW-Authenticate": "Bearer"})
+
+
+class InvalidRefreshTokenError(AppError):
+    """Ошибка некорректного refresh-токена."""
+
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "invalid_refresh_token"
+
+    def __init__(self, message: str = "Некорректный refresh-токен.") -> None:
+        """Инициализирует ошибку некорректного refresh-токена."""
+        super().__init__(message, headers={"WWW-Authenticate": "Bearer"})
 
 
 class RateLimitExceededError(AppError):

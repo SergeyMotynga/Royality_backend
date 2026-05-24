@@ -21,4 +21,4 @@ build
 *.egg-info
 tests
 infra
-BACKEND_DEVELOPMENT_PLAN.md
+docs

@@ -19,72 +19,40 @@ class Settings(BaseSettings):
     app_title: str = Field(default="FinGuru Backend", alias="APP_TITLE")
     env: str = Field(default="dev", alias="ENV")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
-    secret_key: str = Field(default="change-me", alias="SECRET_KEY")
+    secret_key: str = Field(default="CHANGE_ME_LOCAL", alias="SECRET_KEY")
     database_url: str = Field(
-        default="postgresql+psycopg://finguru:finguru@localhost:5432/finguru",
+        default="postgresql+psycopg://user:password@localhost:5432/app",
         alias="DATABASE_URL",
     )
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     access_token_expire_minutes: int = Field(default=30, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(default=30, alias="REFRESH_TOKEN_EXPIRE_DAYS")
-    password_min_length: int = Field(default=8, alias="PASSWORD_MIN_LENGTH")
-    password_max_length: int = Field(default=26, alias="PASSWORD_MAX_LENGTH")
-    register_rate_limit_max_requests_per_email: int = Field(
+
+    auth_rate_limit_max_requests_per_phone: int = Field(
         default=5,
-        alias="REGISTER_RATE_LIMIT_MAX_REQUESTS_PER_EMAIL",
+        alias="AUTH_RATE_LIMIT_MAX_REQUESTS_PER_PHONE",
     )
-    register_rate_limit_max_requests_per_ip: int = Field(
+    auth_rate_limit_max_requests_per_ip: int = Field(
         default=30,
-        alias="REGISTER_RATE_LIMIT_MAX_REQUESTS_PER_IP",
+        alias="AUTH_RATE_LIMIT_MAX_REQUESTS_PER_IP",
     )
-    register_rate_limit_window_seconds: int = Field(
+    auth_rate_limit_window_seconds: int = Field(
         default=900,
-        alias="REGISTER_RATE_LIMIT_WINDOW_SECONDS",
+        alias="AUTH_RATE_LIMIT_WINDOW_SECONDS",
     )
-    login_rate_limit_max_requests_per_email: int = Field(
-        default=10,
-        alias="LOGIN_RATE_LIMIT_MAX_REQUESTS_PER_EMAIL",
-    )
-    login_rate_limit_max_requests_per_ip: int = Field(
+
+    auth_code_ttl_seconds: int = Field(default=600, alias="AUTH_CODE_TTL_SECONDS")
+    auth_code_max_attempts: int = Field(default=5, alias="AUTH_CODE_MAX_ATTEMPTS")
+    auth_code_resend_cooldown_seconds: int = Field(
         default=60,
-        alias="LOGIN_RATE_LIMIT_MAX_REQUESTS_PER_IP",
+        alias="AUTH_CODE_RESEND_COOLDOWN_SECONDS",
     )
-    login_rate_limit_window_seconds: int = Field(
-        default=900,
-        alias="LOGIN_RATE_LIMIT_WINDOW_SECONDS",
-    )
-    verify_rate_limit_max_requests_per_email: int = Field(
-        default=5,
-        alias="VERIFY_RATE_LIMIT_MAX_REQUESTS_PER_EMAIL",
-    )
-    verify_rate_limit_max_requests_per_ip: int = Field(
-        default=30,
-        alias="VERIFY_RATE_LIMIT_MAX_REQUESTS_PER_IP",
-    )
-    verify_rate_limit_window_seconds: int = Field(
-        default=600,
-        alias="VERIFY_RATE_LIMIT_WINDOW_SECONDS",
-    )
-    email_verification_code_ttl_seconds: int = Field(
-        default=600,
-        alias="EMAIL_VERIFICATION_CODE_TTL_SECONDS",
-    )
-    email_verification_max_attempts: int = Field(
-        default=5,
-        alias="EMAIL_VERIFICATION_MAX_ATTEMPTS",
-    )
-    email_verification_resend_cooldown_seconds: int = Field(
-        default=60,
-        alias="EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS",
-    )
-    smtp_host: str = Field(default="localhost", alias="SMTP_HOST")
-    smtp_port: int = Field(default=1025, alias="SMTP_PORT")
-    smtp_username: str = Field(default="", alias="SMTP_USERNAME")
-    smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
-    smtp_from_email: str = Field(default="noreply@finguru.local", alias="SMTP_FROM_EMAIL")
-    smtp_from_name: str = Field(default="FinGuru", alias="SMTP_FROM_NAME")
-    smtp_use_tls: bool = Field(default=False, alias="SMTP_USE_TLS")
-    smtp_use_ssl: bool = Field(default=False, alias="SMTP_USE_SSL")
+
+    sms_provider: str = Field(default="noop", alias="SMS_PROVIDER")
+    sms_api_base_url: str = Field(default="", alias="SMS_API_BASE_URL")
+    sms_api_key: str = Field(default="", alias="SMS_API_KEY")
+    sms_sender_id: str = Field(default="", alias="SMS_SENDER_ID")
+
     api_prefix: str = "/api"
     api_v1_prefix: str = "/v1"
 

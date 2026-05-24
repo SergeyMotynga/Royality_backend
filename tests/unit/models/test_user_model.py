@@ -9,6 +9,7 @@ def test_user_model_has_expected_table_and_fields() -> None:
 
     assert User.__tablename__ == "users"
     assert "id" in table.columns
+    assert "phone_number" in table.columns
     assert "email" in table.columns
     assert "password_hash" in table.columns
     assert "is_active" in table.columns
@@ -18,10 +19,11 @@ def test_user_model_has_expected_table_and_fields() -> None:
     assert "updated_at" in table.columns
     assert "deleted_at" in table.columns
 
-    assert table.c.email.nullable is False
-    assert table.c.email.unique is True
-    assert table.c.email.index is True
-    assert table.c.password_hash.nullable is False
+    assert table.c.phone_number.nullable is False
+    assert table.c.phone_number.unique is True
+    assert table.c.phone_number.index is True
+    assert table.c.email.nullable is True
+    assert table.c.password_hash.nullable is True
     assert table.c.is_active.default.arg is True
     assert table.c.is_superuser.default.arg is False
     assert table.c.is_verified.default.arg is False
@@ -32,3 +34,4 @@ def test_user_model_relationship_to_refresh_sessions_is_selectin() -> None:
 
     assert relationship_property.lazy == "selectin"
     assert relationship_property.back_populates == "user"
+

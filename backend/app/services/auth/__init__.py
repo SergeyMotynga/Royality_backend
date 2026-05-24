@@ -1,17 +1,22 @@
 """Пакет auth-сервисов и контрактов."""
 
 from backend.app.services.auth.contracts import (
-    EmailTaskPublisher,
-    RegisterRateLimiter,
+    AuthCodeState,
+    AuthRateLimiter,
+    SmsTaskPublisher,
     UserRepo,
     VerificationCodeStore,
 )
-from backend.app.services.auth.service import AuthService
+from backend.app.services.auth.service import AuthCodeDispatchResult, AuthVerifyResult, AuthService
 
 __all__ = [
+    "AuthCodeDispatchResult",
+    "AuthCodeState",
+    "AuthRateLimiter",
     "AuthService",
-    "EmailTaskPublisher",
-    "RegisterRateLimiter",
+    "AuthVerifyResult",
+    "SmsTaskPublisher",
     "UserRepo",
     "VerificationCodeStore",
 ]
+

@@ -7,3 +7,4 @@ from backend.app.api.v1.endpoints.admin import health
 
 router = APIRouter(dependencies=[Depends(get_current_superuser)])
 router.include_router(health.router)
+

@@ -19,8 +19,9 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
 
     __tablename__ = "users"
 
-    email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True, index=True)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone_number: Mapped[str] = mapped_column(String(32), nullable=False, unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(320), nullable=True, unique=True, index=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
