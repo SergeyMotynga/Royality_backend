@@ -41,9 +41,15 @@ class ProfileResult:
 class ProfileService:
     """Бизнес-логика чтения и изменения профиля пользователя."""
 
-    def __init__(self, user_crud: UserCrud, post_crud: PostCrud) -> None:
+    def __init__(
+        self,
+        user_crud: UserCrud,
+        post_crud: PostCrud,
+        notification_service: object | None = None,
+    ) -> None:
         self._user_crud = user_crud
         self._post_crud = post_crud
+        self._notification_service = notification_service
 
     def get_profile(self, user_id: str, viewer_user_id: str) -> ProfileResult:
         """Возвращает профиль пользователя по идентификатору."""
@@ -116,7 +122,13 @@ class ProfileService:
         if followee is None:
             raise ProfileNotFoundError("Профиль пользователя не найден")
 
-        self._user_crud.add_follower(follower_id=follower_id, followee_id=followee_id)
+        created_relation = self._user_crud.add_follower(follower_id=follower_id, followee_id=followee_id)
+        if created_relation:
+            self._notify_user_followed(
+                recipient_user_id=followee_id,
+                actor_name=follower.name,
+                actor_user_id=follower_id,
+            )
 
     def unfollow_user(self, current_user_id: str, target_user_id: str) -> None:
         """Отписывает текущего пользователя от другого пользователя."""
@@ -160,3 +172,15 @@ class ProfileService:
             return UUID(raw_uuid)
         except ValueError as exc:
             raise ProfileValidationError(f"Некорректный идентификатор {field_name}") from exc
+
+    def _notify_user_followed(self, recipient_user_id: UUID, actor_name: str, actor_user_id: UUID) -> None:
+        """Отправляет push о подписке, если сервис уведомлений подключен."""
+        if self._notification_service is None:
+            return
+        notify = getattr(self._notification_service, "notify_user_followed", None)
+        if callable(notify):
+            notify(
+                recipient_user_id=recipient_user_id,
+                actor_name=actor_name,
+                actor_user_id=actor_user_id,
+            )

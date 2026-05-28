@@ -15,12 +15,17 @@ from fastapi import (
 from backend.app.api.dependencies.auth import CurrentUser, get_current_user
 from backend.app.api.dependencies.services import get_media_service, get_post_service
 from backend.app.schemas.post import (
+    PostCommentCreateRequest,
+    PostCommentResponse,
+    PostCommentUpdateRequest,
     PostAuthorResponse,
     PostResponse,
     PostUpdateRequest,
 )
 from backend.app.services.media_service import MediaService, MediaUploadError
 from backend.app.services.post_service import (
+    PostCommentsDisabledError,
+    PostCommentResult,
     PostNotFoundError,
     PostPermissionError,
     PostResult,
@@ -44,8 +49,25 @@ def _build_post_response(post: PostResult) -> PostResponse:
             avatar_url=post.author.avatar_url,
         ),
         likes_count=post.likes_count,
+        comments_count=post.comments_count,
         is_liked=post.is_liked,
         created_at=post.created_at,
+    )
+
+
+def _build_comment_response(comment: PostCommentResult) -> PostCommentResponse:
+    """Преобразует DTO комментария в response-схему."""
+    return PostCommentResponse(
+        id=str(comment.id),
+        post_id=str(comment.post_id),
+        text=comment.text,
+        author=PostAuthorResponse(
+            id=str(comment.author.id),
+            name=comment.author.name,
+            avatar_url=comment.author.avatar_url,
+        ),
+        created_at=comment.created_at,
+        updated_at=comment.updated_at,
     )
 
 
@@ -121,6 +143,99 @@ def get_post(
     except PostNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     return _build_post_response(post=post)
+
+
+@router.get("/{post_id}/comments", response_model=list[PostCommentResponse])
+def list_comments(
+    post_id: str,
+    limit: int = Query(default=50),
+    offset: int = Query(default=0),
+    current_user: CurrentUser = Depends(get_current_user),
+    service: PostService = Depends(get_post_service),
+) -> list[PostCommentResponse]:
+    """Возвращает комментарии поста."""
+    try:
+        comments = service.list_comments(post_id=post_id, limit=limit, offset=offset)
+    except PostValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except PostNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return [_build_comment_response(comment=comment) for comment in comments]
+
+
+@router.post(
+    "/{post_id}/comments",
+    response_model=PostCommentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_comment(
+    post_id: str,
+    payload: PostCommentCreateRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: PostService = Depends(get_post_service),
+) -> PostCommentResponse:
+    """Создает комментарий текущего пользователя к посту."""
+    try:
+        comment = service.create_comment(
+            user_id=current_user.user_id,
+            post_id=post_id,
+            text=payload.text,
+        )
+    except PostValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except PostCommentsDisabledError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except PostNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return _build_comment_response(comment=comment)
+
+
+@router.put("/{post_id}/comments/{comment_id}", response_model=PostCommentResponse)
+def update_comment(
+    post_id: str,
+    comment_id: str,
+    payload: PostCommentUpdateRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: PostService = Depends(get_post_service),
+) -> PostCommentResponse:
+    """Редактирует комментарий текущего пользователя."""
+    try:
+        comment = service.update_comment(
+            user_id=current_user.user_id,
+            post_id=post_id,
+            comment_id=comment_id,
+            text=payload.text,
+        )
+    except PostValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except PostNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except PostPermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    return _build_comment_response(comment=comment)
+
+
+@router.delete("/{post_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_comment(
+    post_id: str,
+    comment_id: str,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: PostService = Depends(get_post_service),
+) -> Response:
+    """Удаляет комментарий текущего пользователя."""
+    try:
+        service.delete_comment(
+            user_id=current_user.user_id,
+            post_id=post_id,
+            comment_id=comment_id,
+        )
+    except PostValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except PostNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except PostPermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.put("/{post_id}", response_model=PostResponse)

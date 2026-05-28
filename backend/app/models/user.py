@@ -11,7 +11,9 @@ from backend.app.db.base import Base
 
 if TYPE_CHECKING:
     from backend.app.models.post import Post
+    from backend.app.models.post_comment import PostComment
     from backend.app.models.post_like import PostLike
+    from backend.app.models.push_device_token import PushDeviceToken
 
 
 class User(Base):
@@ -34,3 +36,8 @@ class User(Base):
     )
     posts: Mapped[list["Post"]] = relationship(back_populates="author")
     liked_posts: Mapped[list["PostLike"]] = relationship(back_populates="user")
+    comments: Mapped[list["PostComment"]] = relationship(back_populates="author")
+    push_tokens: Mapped[list["PushDeviceToken"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

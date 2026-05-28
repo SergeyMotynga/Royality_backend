@@ -10,6 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.app.db.base import Base
 
 if TYPE_CHECKING:
+    from backend.app.models.post_comment import PostComment
     from backend.app.models.post_like import PostLike
     from backend.app.models.post_media import PostMedia
     from backend.app.models.user import User
@@ -52,6 +53,10 @@ class Post(Base):
         cascade="all, delete-orphan",
     )
     likes: Mapped[list["PostLike"]] = relationship(
+        back_populates="post",
+        cascade="all, delete-orphan",
+    )
+    comments: Mapped[list["PostComment"]] = relationship(
         back_populates="post",
         cascade="all, delete-orphan",
     )

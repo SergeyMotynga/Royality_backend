@@ -7,7 +7,15 @@ from sqlalchemy import engine_from_config, pool
 
 from backend.app.core.config import get_settings
 from backend.app.db.base import Base
-from backend.app.models import Post, PostLike, PostMedia, User, UserFollower  # noqa: F401
+from backend.app.models import (  # noqa: F401
+    Post,
+    PostComment,
+    PostLike,
+    PostMedia,
+    PushDeviceToken,
+    User,
+    UserFollower,
+)
 
 config = context.config
 

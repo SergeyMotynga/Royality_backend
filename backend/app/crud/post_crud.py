@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from backend.app.models.post import Post
+from backend.app.models.post_comment import PostComment
 from backend.app.models.post_like import PostLike
 from backend.app.models.post_media import PostMedia
 
@@ -77,6 +78,55 @@ class PostCrud:
         self._session.delete(post)
         self._session.commit()
 
+    def create_comment(self, post_id: UUID, author_id: UUID, text: str) -> PostComment:
+        """Создает комментарий к посту и возвращает сохраненную сущность."""
+        comment = PostComment(post_id=post_id, author_id=author_id, text=text)
+        self._session.add(comment)
+        self._session.commit()
+        created_comment = self.get_comment_by_id(comment_id=comment.id)
+        if created_comment is None:
+            raise RuntimeError("Комментарий не удалось загрузить после создания")
+        return created_comment
+
+    def get_comment_by_id(self, comment_id: UUID) -> PostComment | None:
+        """Возвращает комментарий по идентификатору."""
+        stmt = (
+            select(PostComment)
+            .where(PostComment.id == comment_id)
+            .options(
+                joinedload(PostComment.author),
+                joinedload(PostComment.post),
+            )
+        )
+        return self._session.execute(stmt).scalars().unique().first()
+
+    def list_comments(self, post_id: UUID, limit: int, offset: int) -> list[PostComment]:
+        """Возвращает комментарии поста в порядке создания."""
+        stmt = (
+            select(PostComment)
+            .where(PostComment.post_id == post_id)
+            .order_by(PostComment.created_at.asc())
+            .limit(limit)
+            .offset(offset)
+            .options(joinedload(PostComment.author))
+        )
+        return list(self._session.execute(stmt).scalars().unique().all())
+
+    def update_comment(self, comment: PostComment, text: str) -> PostComment:
+        """Обновляет текст комментария."""
+        comment.text = text
+        self._session.add(comment)
+        self._session.commit()
+        updated_comment = self.get_comment_by_id(comment_id=comment.id)
+        if updated_comment is None:
+            raise RuntimeError("Комментарий не удалось загрузить после обновления")
+        return updated_comment
+
+    def delete_comment(self, comment: PostComment) -> None:
+        """Удаляет комментарий."""
+        self._session.delete(comment)
+        self._session.commit()
+
     def add_like(self, post_id: UUID, user_id: UUID) -> bool:
         """Добавляет лайк к посту и возвращает признак создания записи."""
         existing_like = self._session.get(PostLike, (post_id, user_id))
@@ -111,6 +161,23 @@ class PostCrud:
         )
         rows = self._session.execute(stmt).all()
         return {post_id: int(likes_count) for post_id, likes_count in rows}
+
+    def count_comments(self, post_id: UUID) -> int:
+        """Возвращает количество комментариев у поста."""
+        stmt = select(func.count()).select_from(PostComment).where(PostComment.post_id == post_id)
+        return int(self._session.scalar(stmt) or 0)
+
+    def count_comments_for_posts(self, post_ids: Sequence[UUID]) -> dict[UUID, int]:
+        """Возвращает карту количества комментариев для набора постов."""
+        if not post_ids:
+            return {}
+        stmt = (
+            select(PostComment.post_id, func.count().label("comments_count"))
+            .where(PostComment.post_id.in_(post_ids))
+            .group_by(PostComment.post_id)
+        )
+        rows = self._session.execute(stmt).all()
+        return {post_id: int(comments_count) for post_id, comments_count in rows}
 
     def is_liked(self, post_id: UUID, user_id: UUID) -> bool:
         """Проверяет, поставил ли пользователь лайк посту."""

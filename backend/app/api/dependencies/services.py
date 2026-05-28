@@ -5,12 +5,15 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.config import get_settings
 from backend.app.crud.post_crud import PostCrud
+from backend.app.crud.push_crud import PushDeviceTokenCrud
 from backend.app.crud.user_crud import UserCrud
 from backend.app.db.session import get_db_session
 from backend.app.services.auth_service import AuthService
+from backend.app.services.firebase_push_client import FirebasePushClient
 from backend.app.services.media_service import MediaService
 from backend.app.services.post_service import PostService
 from backend.app.services.profile_service import ProfileService
+from backend.app.services.push_notification_service import PushNotificationService
 
 
 def get_auth_service(session: Session = Depends(get_db_session)) -> AuthService:
@@ -21,12 +24,34 @@ def get_auth_service(session: Session = Depends(get_db_session)) -> AuthService:
 
 def get_post_service(session: Session = Depends(get_db_session)) -> PostService:
     """Возвращает сервис работы с постами."""
-    return PostService(post_crud=PostCrud(session=session), user_crud=UserCrud(session=session))
+    return PostService(
+        post_crud=PostCrud(session=session),
+        user_crud=UserCrud(session=session),
+        notification_service=get_push_notification_service(session=session),
+    )
 
 
 def get_profile_service(session: Session = Depends(get_db_session)) -> ProfileService:
     """Возвращает сервис работы с профилем пользователя."""
-    return ProfileService(user_crud=UserCrud(session=session), post_crud=PostCrud(session=session))
+    return ProfileService(
+        user_crud=UserCrud(session=session),
+        post_crud=PostCrud(session=session),
+        notification_service=get_push_notification_service(session=session),
+    )
+
+
+def get_push_notification_service(session: Session = Depends(get_db_session)) -> PushNotificationService:
+    """Возвращает сервис регистрации устройств и отправки push-уведомлений."""
+    settings = get_settings()
+    return PushNotificationService(
+        push_crud=PushDeviceTokenCrud(session=session),
+        user_crud=UserCrud(session=session),
+        fcm_client=FirebasePushClient(
+            enabled=settings.fcm_enabled,
+            credentials_path=settings.firebase_credentials_path,
+            credentials_json=settings.firebase_credentials_json,
+        ),
+    )
 
 
 def get_media_service() -> MediaService:

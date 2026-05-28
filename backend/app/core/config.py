@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     minio_region: str = Field(alias="ROYALITY_MINIO_REGION")
     minio_secure: bool = Field(alias="ROYALITY_MINIO_SECURE")
 
+    fcm_enabled: bool = Field(default=False, alias="ROYALITY_FCM_ENABLED")
+    firebase_credentials_path: str | None = Field(default=None, alias="ROYALITY_FIREBASE_CREDENTIALS_PATH")
+    firebase_credentials_json: str | None = Field(default=None, alias="ROYALITY_FIREBASE_CREDENTIALS_JSON")
+
     @property
     def resolved_database_url(self) -> str:
         """Возвращает DSN БД из явного URL или собранный из частей."""

@@ -7,10 +7,12 @@ from backend.app.api.dependencies.services import (
     get_auth_service,
     get_media_service,
     get_profile_service,
+    get_push_notification_service,
 )
 from backend.app.schemas.auth import LoginRequest, LoginResponse, SignupRequest, SignupResponse
 from backend.app.schemas.media import MediaUploadResponse
 from backend.app.schemas.profile import UserProfileResponse, UserProfileUpdateRequest
+from backend.app.schemas.push import PushTokenRequest
 from backend.app.services.auth_service import (
     AuthService,
     AuthValidationError,
@@ -23,6 +25,11 @@ from backend.app.services.profile_service import (
     ProfileResult,
     ProfileService,
     ProfileValidationError,
+)
+from backend.app.services.push_notification_service import (
+    PushNotFoundError,
+    PushNotificationService,
+    PushValidationError,
 )
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -141,6 +148,41 @@ async def upload_my_avatar(
     except ProfileNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     return MediaUploadResponse(url=url)
+
+
+@router.put("/me/push-token", status_code=status.HTTP_204_NO_CONTENT)
+def register_my_push_token(
+    payload: PushTokenRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: PushNotificationService = Depends(get_push_notification_service),
+) -> Response:
+    """Регистрирует FCM-токен устройства текущего пользователя."""
+    try:
+        service.register_token(
+            user_id=current_user.user_id,
+            token=payload.token,
+            platform=payload.platform,
+            device_id=payload.device_id,
+        )
+    except PushValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except PushNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete("/me/push-token", status_code=status.HTTP_204_NO_CONTENT)
+def unregister_my_push_token(
+    payload: PushTokenRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: PushNotificationService = Depends(get_push_notification_service),
+) -> Response:
+    """Удаляет FCM-токен устройства текущего пользователя."""
+    try:
+        service.unregister_token(user_id=current_user.user_id, token=payload.token)
+    except PushValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{user_id}/follow", status_code=status.HTTP_204_NO_CONTENT)

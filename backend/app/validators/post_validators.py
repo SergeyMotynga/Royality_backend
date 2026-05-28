@@ -29,3 +29,20 @@ def validate_posts_pagination(limit: int, offset: int) -> None:
         raise ValueError("Параметр limit должен быть в диапазоне [1, 100]")
     if offset < 0:
         raise ValueError("Параметр offset не может быть отрицательным")
+
+
+def validate_comment_text(text: str) -> None:
+    """Проверяет корректность текста комментария."""
+    normalized_text = text.strip()
+    if not normalized_text:
+        raise ValueError("Текст комментария не может быть пустым")
+    if len(normalized_text) > 1000:
+        raise ValueError("Текст комментария не должен превышать 1000 символов")
+
+
+def validate_comments_pagination(limit: int, offset: int) -> None:
+    """Проверяет корректность параметров пагинации комментариев."""
+    if limit < 1 or limit > 100:
+        raise ValueError("Параметр limit должен быть в диапазоне [1, 100]")
+    if offset < 0:
+        raise ValueError("Параметр offset не может быть отрицательным")
